@@ -1,63 +1,203 @@
-# ivor-core
+# IVOR Core - Personal Wellness & Crisis Intervention
 
-Personal AI Services domain providing AI assistance, wellness tracking, and community resources.
+AI-powered personal wellness support with community-focused crisis intervention for Black queer communities.
 
-## Overview
+## 🎯 What This Service Does
 
-This is part of the IVOR (Intelligent Virtual Organizing Resource) Community Liberation Technology Platform - a 4-domain system designed to serve Black queer communities with AI-powered services focused on liberation and collective empowerment.
+**IVOR Core** provides personal wellness support that:
 
-## Architecture
+- **Crisis Intervention**: Immediate resources for mental health crises (988, Trevor Project, Crisis Text Line)
+- **Anxiety Support**: 5-4-3-2-1 grounding techniques contextualized for systemic oppression
+- **Mental Wellness**: Culturally affirming therapy connections and community support
+- **HIV Health Resources**: Integration with menrus.co.uk for comprehensive sexual health support
+- **Community-Centered Decision Making**: BLKOUT Decision Framework for empowerment choices
 
-- **Type**: backend
-- **Framework**: Node.js + Express + TypeScript
-- **Deployment**: Vercel
-- **Database**: Supabase (PostgreSQL)
-- **Cross-Domain**: Redis pub/sub coordination
+## 🏗️ Architecture Overview
 
-## Environment Variables
+**IVOR Platform (6 Services):**
+1. **IVOR Frontend** - React chat interface  
+2. **IVOR API Gateway** - Cross-service orchestration
+3. **IVOR Core** ← You are here (Personal Wellness Hub)
+4. **IVOR Organizing** - Housing justice & mobilization
+5. **IVOR Community** - Intelligence & analytics  
+6. **IVOR Social** - Black trans visibility & viral strategy
 
-Required environment variables for deployment:
+## 🛠️ Technical Implementation
 
-```bash
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-GROQ_API_KEY=your_groq_api_key
-REDIS_URL=your_redis_url
+**Framework**: Node.js serverless function on Vercel  
+**AI Integration**: Community-focused response generation  
+**Health Resources**: Direct integration with menrus.co.uk health platform  
+**Crisis Support**: Real crisis hotlines and immediate resources  
+
+## 📦 Actual Dependencies
+
+```json
+{
+  "dependencies": {
+    "@vercel/node": "^3.x"
+  }
+}
 ```
 
-## Deployment
+**No External Services Required:**
+- ❌ No database connection (stateless serverless function)
+- ❌ No Redis dependency  
+- ✅ Direct community-focused response generation
+- ✅ Integration with established health resources (menrus.co.uk)
 
+## 🚀 API Endpoints (Current Implementation)
+
+### **Health Check**
+```
+GET /api/health
+```
+Returns: IVOR Core service status and wellness capabilities
+
+### **Community-Focused Chat**  
+```
+POST /api/chat
+Content-Type: application/json
+
+{
+  "message": "your wellness query here",
+  "userId": "optional",
+  "sessionId": "optional"
+}
+```
+
+**Response Types:**
+- **Crisis Intervention**: Immediate resources + culturally affirming support
+- **Anxiety Support**: Grounding techniques + systemic context
+- **HIV Services**: Specific menrus.co.uk resources + community context  
+- **Mental Wellness**: Community-based therapy and support connections
+- **Decision Support**: BLKOUT framework for community-centered choices
+
+## 🌐 Live Deployment
+
+**Production URL**: https://ivor-core-gj4mxzljt-robs-projects-54d653d3.vercel.app  
+**Status**: ✅ OPERATIONAL - Crisis support and wellness guidance working
+
+## 💜 Crisis Support Resources (Currently Active)
+
+**Immediate Crisis Support:**
+- **National Suicide Prevention Lifeline**: 988
+- **Crisis Text Line**: Text HOME to 741741  
+- **The Trevor Project** (LGBTQ+ crisis support): 1-866-488-7386
+- **Trans Lifeline**: 877-565-8860
+
+**Black Mental Health Resources:**
+- **Black Mental Health Alliance**: Community-specific support
+- **Fireweed Collective**: Healing justice resources
+- **Audre Lorde Project**: Community organizing + wellness
+
+## 🤝 Community Collaboration
+
+**We are stronger together!** This wellness service needs community voices to remain authentic and effective.
+
+### How to Contribute
+
+1. **Test Crisis Responses**: Share feedback on crisis intervention quality and cultural authenticity
+2. **Mental Health Professionals**: Review and improve wellness guidance and resource connections  
+3. **Community Members**: Test responses for cultural authenticity and liberation focus
+4. **Accessibility Experts**: Ensure wellness support is accessible to disabled community members
+
+### Current Priorities  
+- **Crisis Response Quality**: Ensuring immediate support is culturally affirming and effective
+- **Resource Accuracy**: Keeping mental health and HIV resources current and accessible
+- **Cultural Authenticity**: Maintaining Black queer liberation focus in all responses
+- **Community Validation**: Regular community review of wellness guidance and crisis support
+
+### Areas Needing Community Support
+- **Local Resource Mapping**: Connecting to community-specific mental health resources
+- **Peer Support Networks**: Integration with community support groups and healing circles
+- **Language Accessibility**: Multi-language support for broader community access
+- **Crisis Intervention Training**: Community feedback on crisis response effectiveness
+
+## 🐛 Known Issues & Areas for Improvement
+
+**Current Limitations:**
+- Limited local resource knowledge (focuses on national resources)
+- No persistent wellness tracking between sessions
+- Could benefit from peer support network integration
+- Crisis responses could include more community-specific resources
+
+**Community Help Wanted:**
+- **Mental Health Professionals**: Review crisis intervention protocols and resource lists
+- **Community Organizers**: Connect wellness support to broader liberation organizing
+- **Accessibility Advocates**: Ensure wellness support serves disabled community members
+- **Local Community Leaders**: Help map region-specific mental health and crisis resources
+
+## 🚀 Setup Instructions  
+
+### Prerequisites
+- Node.js 18+
+- Vercel CLI
+
+### Installation
 ```bash
-# Install dependencies
-npm install
+# Clone repository
+git clone [repository-url] 
+cd ivor-core
 
-# Build for production
-npm run build
+# Install Vercel CLI if needed
+npm install -g vercel
 
-# Deploy to Vercel
+# Deploy to Vercel (no build step needed)
 vercel --prod
 ```
 
-## API Endpoints
+## 📊 Response Examples
 
-- `POST /api/chat` - AI chat interface
-- `GET /api/wellness` - Wellness tracking
-- `GET /api/resources` - Community resources
+**Crisis Intervention Response:**
+```json
+{
+  "response": "I hear you're in crisis. First - you are valued, you belong, and this community needs you. Immediate resources: National Suicide Prevention Lifeline (988), Crisis Text Line (741741), The Trevor Project (1-866-488-7386). Local support: Black Mental Health Alliance, Fireweed Collective, Audre Lorde Project...",
+  "service": "ivor-core", 
+  "responseCategory": "crisis_intervention",
+  "communityFocused": true,
+  "culturallyAffirming": true
+}
+```
 
-## Cross-Domain Coordination
+**HIV Services Response:**
+```json
+{
+  "response": "HIV and sexual health support for Black queer communities: Our health resources platform at menrus.co.uk offers comprehensive information including PrEP access, regular testing guidance, post-exposure prophylaxis (PEP) information, and connections to culturally competent healthcare providers...",
+  "service": "ivor-core",
+  "responseCategory": "health",
+  "knowledgeSource": "menrus.co.uk",
+  "communityFocused": true
+}
+```
 
-This service coordinates with other IVOR platform domains through the API Gateway using Redis pub/sub messaging for real-time orchestrated responses.
+**Anxiety Support Response:**
+```json
+{
+  "response": "I see you're dealing with anxiety - this is incredibly common in our community due to systemic stressors. Let's start with some grounding: Can you name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste? This 5-4-3-2-1 technique helps with anxiety...",
+  "service": "ivor-core",
+  "responseCategory": "anxiety_support", 
+  "technique": "5-4-3-2-1_grounding",
+  "contextualizedFor": "systemic_oppression"
+}
+```
 
-## Community Values
+## 🏳️‍🌈 Community Values
 
-Built with values of:
-- ♿ Accessibility first
-- 🌈 Queer liberation
-- ✊🏿 Racial justice  
-- 🤝 Cooperative ownership
-- 🔒 Data sovereignty
+This wellness service is built with values of:
+- ♿ **Accessible Wellness**: Mental health support for all community members
+- 🌈 **Queer-Affirming Care**: LGBTQ+ specific resources and understanding
+- ✊🏿 **Liberation-Focused**: Connecting individual wellness to community empowerment  
+- 🤝 **Collective Healing**: Community-based approaches to mental health
+- 🔒 **Community Safety**: Culturally safe and affirming crisis intervention
+
+## 📞 Community Support
+
+**Need Help?** Connect with the community:
+- Share feedback on crisis response quality and cultural authenticity
+- Report issues with resource accuracy or accessibility
+- Suggest improvements to wellness guidance and community connections
+- Test responses with real community scenarios and mental health needs
 
 ---
 
-Part of the [IVOR Platform](https://github.com/BLKOUTUK/ivorsolo) | Generated with [Claude Code](https://claude.ai/code)
+**Part of the [IVOR Community Liberation Platform](/) | Healing in community | We are stronger together** 💜✊🏿🏳️‍🌈

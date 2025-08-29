@@ -212,7 +212,7 @@ app.get('/api/journal/entries/:userId', async (req, res) => {
     const { userId } = req.params
     
     // Mock journal entries
-    const entries = []
+    const entries: any[] = []
 
     res.json({ success: true, entries })
   } catch (error) {
@@ -256,7 +256,7 @@ app.get('/api/crisis/resources', async (req, res) => {
       const categoryArray = Array.isArray(categories) ? categories : [categories]
       resources = resources.filter(r => 
         r.specializations.some(spec => 
-          categoryArray.some(cat => spec.toLowerCase().includes(cat.toLowerCase()))
+          categoryArray.some(cat => typeof cat === 'string' && spec.toLowerCase().includes(cat.toLowerCase()))
         )
       )
     }
@@ -391,7 +391,7 @@ async function generateAIResponse(message: string, context?: any, sessionId?: st
         userId: context?.userId || 'anonymous',
         conversationHistory: [],
         userProfile: context || {},
-        emotionalState: detectEmotionalState(message),
+        emotionalState: detectEmotionalState(message) as 'calm' | 'stressed' | 'excited' | 'overwhelmed' | 'joyful' | 'uncertain',
         sessionId: sessionId || 'default'
       }
       

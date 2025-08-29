@@ -1,23 +1,21 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "src/server.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
     {
-      "src": "/(.*)",
-      "dest": "src/server.ts"
+      "source": "/(.*)",
+      "destination": "/api/index.js"
     }
   ],
   "env": {
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "GROQ_API_KEY": "@groq_api_key",
-    "REDIS_URL": "@redis_url",
+    "SUPABASE_URL": "https://demo.supabase.co",
+    "SUPABASE_ANON_KEY": "demo_anon_key_for_beta_testing",
+    "SUPABASE_SERVICE_ROLE_KEY": "demo_service_role_key_for_beta_testing",
+    "GROQ_API_KEY": "demo_groq_key_for_beta_testing",
+    "REDIS_URL": "redis://demo-redis:6379",
     "NODE_ENV": "production"
   }
 }
