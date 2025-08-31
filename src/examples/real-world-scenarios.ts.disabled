@@ -1,0 +1,362 @@
+/**
+ * Real-World Journey-Aware Response Scenarios
+ * Demonstrates the system's ability to provide contextual, stage-appropriate support
+ * for UK Black queer community liberation
+ */
+
+import JourneyStageDetector from '../services/JourneyStageDetector.js'
+import UKKnowledgeBase from '../services/UKKnowledgeBase.js'
+import ContextualResponseGenerator from '../services/ContextualResponseGenerator.js'
+import JourneyAwareConversationService from '../services/JourneyAwareConversationService.js'
+import ConversationService from '../conversationService.js'
+
+// Mock conversation service for testing
+const mockConversationService = new ConversationService('mock-url', 'mock-key')
+
+/**
+ * SCENARIO 1: HIV Crisis - New Diagnosis
+ * Journey: Crisis Stage → Emergency Resources + Stabilization Pathway
+ */
+export async function hivNewDiagnosisScenario() {
+  console.log('🧪 SCENARIO 1: HIV New Diagnosis Crisis')
+  console.log('=' .repeat(50))
+  
+  const journeyService = new JourneyAwareConversationService(mockConversationService)
+  
+  const message = "I just got diagnosed with HIV and I'm completely terrified. I don't know what this means or what to do next. I'm a Black gay man in London and I feel like my life is over."
+  
+  const context = {
+    userId: 'test-user-1',
+    sessionId: 'scenario-1',
+    conversationHistory: [],
+    userProfile: {
+      location: 'London',
+      culturalContext: 'Black British',
+      supportNeeds: ['mental health', 'sexual health']
+    },
+    currentTopic: 'sexual_health',
+    lastInteraction: new Date()
+  }
+  
+  const response = await journeyService.generateJourneyAwareResponse(message, context)
+  
+  console.log(`📤 User Message: "${message}"`)
+  console.log(`🎯 Detected Journey Stage: ${response.journeyContext.stage}`)
+  console.log(`⚡ Urgency Level: ${response.journeyContext.urgency}`) 
+  console.log(`💭 Emotional State: ${response.journeyContext.emotion}`)
+  console.log(`🏴󠁧󠁢󠁥󠁮󠁧󠁿 Location: ${response.journeyContext.location.region}`)
+  console.log(`📋 Resources Provided: ${response.resourcesProvided.join(', ')}`)
+  console.log(`🔄 Follow-up Required: ${response.followUpRequired}`)
+  console.log(`\n💬 IVOR Response:`)
+  console.log(response.response)
+  console.log(`\n🗺️ Next Stage Guidance:`)
+  console.log(response.nextStageGuidance)
+  console.log('\n' + '='.repeat(50) + '\n')
+  
+  return response
+}
+
+/**
+ * SCENARIO 2: Mental Health Stabilization
+ * Journey: Stabilization Stage → NHS Therapy Access + Growth Preparation
+ */
+export async function mentalHealthStabilizationScenario() {
+  console.log('🧪 SCENARIO 2: Mental Health NHS Access')
+  console.log('=' .repeat(50))
+  
+  const journeyService = new JourneyAwareConversationService(mockConversationService)
+  
+  const message = "I've been stable for a few weeks after my breakdown but I need proper therapy through the NHS. I'm not sure how to access it and the waiting times worry me. I'm in Manchester and money is tight."
+  
+  const context = {
+    userId: 'test-user-2',
+    sessionId: 'scenario-2', 
+    conversationHistory: [{
+      role: 'user' as const,
+      content: 'Had a mental health crisis last month',
+      timestamp: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+    }],
+    userProfile: {
+      location: 'Manchester',
+      supportNeeds: ['mental health'],
+      accessibilityNeeds: ['financial support']
+    },
+    currentTopic: 'mental_health',
+    lastInteraction: new Date()
+  }
+  
+  const response = await journeyService.generateJourneyAwareResponse(message, context)
+  
+  console.log(`📤 User Message: "${message}"`)
+  console.log(`🎯 Detected Journey Stage: ${response.journeyContext.stage}`)
+  console.log(`⚡ Urgency Level: ${response.journeyContext.urgency}`)
+  console.log(`💭 Emotional State: ${response.journeyContext.emotion}`)
+  console.log(`🏴󠁧󠁢󠁥󠁮󠁧󠁿 Location: ${response.journeyContext.location.region}`)
+  console.log(`📋 Resources Provided: ${response.resourcesProvided.join(', ')}`)
+  console.log(`🔄 Follow-up Required: ${response.followUpRequired}`)
+  console.log(`\n💬 IVOR Response:`)
+  console.log(response.response)
+  console.log(`\n🗺️ Next Stage Guidance:`)
+  console.log(response.nextStageGuidance)
+  console.log('\n' + '='.repeat(50) + '\n')
+  
+  return response
+}
+
+/**
+ * SCENARIO 3: PrEP Access Growth
+ * Journey: Growth Stage → Proactive Sexual Health Management
+ */
+export async function prepAccessGrowthScenario() {
+  console.log('🧪 SCENARIO 3: PrEP Access for Prevention')
+  console.log('=' .repeat(50))
+  
+  const journeyService = new JourneyAwareConversationService(mockConversationService)
+  
+  const message = "I'm in a much better place now and want to be proactive about my sexual health. I'd like to start PrEP but want to know about NHS vs private options and what the process involves."
+  
+  const context = {
+    userId: 'test-user-3',
+    sessionId: 'scenario-3',
+    conversationHistory: [{
+      role: 'user' as const,
+      content: 'Feeling much more stable and ready to take charge of my health',
+      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago  
+    }],
+    userProfile: {
+      location: 'Brighton',
+      supportNeeds: ['sexual health']
+    },
+    currentTopic: 'sexual_health',
+    lastInteraction: new Date()
+  }
+  
+  const response = await journeyService.generateJourneyAwareResponse(message, context)
+  
+  console.log(`📤 User Message: "${message}"`)
+  console.log(`🎯 Detected Journey Stage: ${response.journeyContext.stage}`)
+  console.log(`⚡ Urgency Level: ${response.journeyContext.urgency}`)
+  console.log(`💭 Emotional State: ${response.journeyContext.emotion}`)
+  console.log(`🏴󠁧󠁢󠁥󠁮󠁧󠁿 Location: ${response.journeyContext.location.region}`)
+  console.log(`📋 Resources Provided: ${response.resourcesProvided.join(', ')}`)
+  console.log(`🔄 Follow-up Required: ${response.followUpRequired}`)
+  console.log(`\n💬 IVOR Response:`)
+  console.log(response.response)
+  console.log(`\n🗺️ Next Stage Guidance:`)
+  console.log(response.nextStageGuidance)
+  console.log('\n' + '='.repeat(50) + '\n')
+  
+  return response
+}
+
+/**
+ * SCENARIO 4: Housing Crisis Emergency
+ * Journey: Crisis Stage → Emergency Housing + Legal Rights
+ */
+export async function housingCrisisScenario() {
+  console.log('🧪 SCENARIO 4: Housing Crisis - Eviction Threat')
+  console.log('=' .repeat(50))
+  
+  const journeyService = new JourneyAwareConversationService(mockConversationService)
+  
+  const message = "My landlord is trying to evict me and I think it's because I'm trans and Black. I have nowhere else to go and I'm terrified of being homeless. This is happening in Birmingham and I need help urgently."
+  
+  const context = {
+    userId: 'test-user-4',
+    sessionId: 'scenario-4',
+    conversationHistory: [],
+    userProfile: {
+      location: 'Birmingham',
+      supportNeeds: ['housing', 'legal rights'],
+      culturalContext: 'Black British trans'
+    },
+    currentTopic: 'housing',
+    lastInteraction: new Date()
+  }
+  
+  const response = await journeyService.generateJourneyAwareResponse(message, context)
+  
+  console.log(`📤 User Message: "${message}"`)
+  console.log(`🎯 Detected Journey Stage: ${response.journeyContext.stage}`)
+  console.log(`⚡ Urgency Level: ${response.journeyContext.urgency}`)
+  console.log(`💭 Emotional State: ${response.journeyContext.emotion}`)
+  console.log(`🏴󠁧󠁢󠁥󠁮󠁧󠁿 Location: ${response.journeyContext.location.region}`)
+  console.log(`📋 Resources Provided: ${response.resourcesProvided.join(', ')}`)
+  console.log(`🔄 Follow-up Required: ${response.followUpRequired}`)
+  console.log(`\n💬 IVOR Response:`)
+  console.log(response.response)
+  console.log(`\n🗺️ Next Stage Guidance:`)
+  console.log(response.nextStageGuidance)
+  console.log('\n' + '='.repeat(50) + '\n')
+  
+  return response
+}
+
+/**
+ * SCENARIO 5: Community Healing - Ready to Give Back
+ * Journey: Community Healing Stage → Peer Support & Mentoring
+ */
+export async function communityHealingScenario() {
+  console.log('🧪 SCENARIO 5: Community Healing - Ready to Support Others')
+  console.log('=' .repeat(50))
+  
+  const journeyService = new JourneyAwareConversationService(mockConversationService)
+  
+  const message = "I've come such a long way in my healing journey and I feel ready to give back. I want to support other young Black queer people who are going through what I went through. How can I get involved in peer support or mentoring?"
+  
+  const context = {
+    userId: 'test-user-5',
+    sessionId: 'scenario-5',
+    conversationHistory: [{
+      role: 'user' as const,
+      content: 'Feeling empowered and grateful for how far I\'ve come',
+      timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
+    }],
+    userProfile: {
+      location: 'London',
+      supportNeeds: ['community engagement'],
+      culturalContext: 'Black British queer'
+    },
+    currentTopic: 'community',
+    lastInteraction: new Date()
+  }
+  
+  const response = await journeyService.generateJourneyAwareResponse(message, context)
+  
+  console.log(`📤 User Message: "${message}"`)
+  console.log(`🎯 Detected Journey Stage: ${response.journeyContext.stage}`)
+  console.log(`⚡ Urgency Level: ${response.journeyContext.urgency}`)
+  console.log(`💭 Emotional State: ${response.journeyContext.emotion}`)
+  console.log(`🏴󠁧󠁢󠁥󠁮󠁧󠁿 Location: ${response.journeyContext.location.region}`)
+  console.log(`📋 Resources Provided: ${response.resourcesProvided.join(', ')}`)
+  console.log(`🔄 Follow-up Required: ${response.followUpRequired}`)
+  console.log(`\n💬 IVOR Response:`)
+  console.log(response.response)
+  console.log(`\n🗺️ Next Stage Guidance:`)
+  console.log(response.nextStageGuidance)
+  console.log('\n' + '='.repeat(50) + '\n')
+  
+  return response
+}
+
+/**
+ * SCENARIO 6: Advocacy Stage - Organizing for Change
+ * Journey: Advocacy Stage → System Change & Movement Building
+ */
+export async function advocacyOrganisingScenario() {
+  console.log('🧪 SCENARIO 6: Advocacy - Organizing Against Healthcare Discrimination')
+  console.log('=' .repeat(50))
+  
+  const journeyService = new JourneyAwareConversationService(mockConversationService)
+  
+  const message = "I'm fed up with the discrimination Black trans people face in healthcare. I want to organize a campaign to improve NHS services and hold them accountable. I have experience and passion but need guidance on effective organizing strategies."
+  
+  const context = {
+    userId: 'test-user-6',
+    sessionId: 'scenario-6',
+    conversationHistory: [{
+      role: 'user' as const,
+      content: 'Ready to fight for systemic change in healthcare',
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+    }],
+    userProfile: {
+      location: 'Glasgow',
+      supportNeeds: ['advocacy', 'organizing'],
+      culturalContext: 'Black British trans activist'
+    },
+    currentTopic: 'advocacy',
+    lastInteraction: new Date()
+  }
+  
+  const response = await journeyService.generateJourneyAwareResponse(message, context)
+  
+  console.log(`📤 User Message: "${message}"`)
+  console.log(`🎯 Detected Journey Stage: ${response.journeyContext.stage}`)
+  console.log(`⚡ Urgency Level: ${response.journeyContext.urgency}`)
+  console.log(`💭 Emotional State: ${response.journeyContext.emotion}`)
+  console.log(`🏴󠁧󠁢󠁥󠁮󠁧󠁿 Location: ${response.journeyContext.location.region}`)
+  console.log(`📋 Resources Provided: ${response.resourcesProvided.join(', ')}`)
+  console.log(`🔄 Follow-up Required: ${response.followUpRequired}`)
+  console.log(`\n💬 IVOR Response:`)
+  console.log(response.response)
+  console.log(`\n🗺️ Next Stage Guidance:`)
+  console.log(response.nextStageGuidance)
+  console.log('\n' + '='.repeat(50) + '\n')
+  
+  return response
+}
+
+/**
+ * SCENARIO 7: Rural Isolation - Unique Challenges
+ * Journey: Stabilization Stage → Digital-First Support
+ */
+export async function ruralIsolationScenario() {
+  console.log('🧪 SCENARIO 7: Rural Isolation - Limited Local Resources')
+  console.log('=' .repeat(50))
+  
+  const journeyService = new JourneyAwareConversationService(mockConversationService)
+  
+  const message = "I live in rural Wales and I'm the only openly queer Black person I know here. I'm feeling isolated and struggling with my mental health but there are no local LGBTQ+ services. I don't have a car so travelling is difficult."
+  
+  const context = {
+    userId: 'test-user-7',
+    sessionId: 'scenario-7',
+    conversationHistory: [],
+    userProfile: {
+      location: 'rural Wales',
+      supportNeeds: ['mental health', 'community'],
+      accessibilityNeeds: ['transport barriers']
+    },
+    currentTopic: 'mental_health',
+    lastInteraction: new Date()
+  }
+  
+  const response = await journeyService.generateJourneyAwareResponse(message, context)
+  
+  console.log(`📤 User Message: "${message}"`)
+  console.log(`🎯 Detected Journey Stage: ${response.journeyContext.stage}`)
+  console.log(`⚡ Urgency Level: ${response.journeyContext.urgency}`)
+  console.log(`💭 Emotional State: ${response.journeyContext.emotion}`)
+  console.log(`🏴󠁧󠁢󠁥󠁮󠁧󠁿 Location: ${response.journeyContext.location.region}`)
+  console.log(`🚗 Transport Access: ${response.journeyContext.location.transportAccess}`)
+  console.log(`📋 Resources Provided: ${response.resourcesProvided.join(', ')}`)
+  console.log(`🔄 Follow-up Required: ${response.followUpRequired}`)
+  console.log(`\n💬 IVOR Response:`)
+  console.log(response.response)
+  console.log(`\n🗺️ Next Stage Guidance:`)
+  console.log(response.nextStageGuidance)
+  console.log('\n' + '='.repeat(50) + '\n')
+  
+  return response
+}
+
+/**
+ * Run all scenarios to demonstrate system capabilities
+ */
+export async function runAllScenarios() {
+  console.log('🚀 JOURNEY-AWARE KNOWLEDGE SYSTEM DEMO')
+  console.log('Real-world scenarios for UK Black queer community liberation')
+  console.log('=' .repeat(80))
+  console.log('')
+  
+  try {
+    await hivNewDiagnosisScenario()
+    await mentalHealthStabilizationScenario()
+    await prepAccessGrowthScenario()
+    await housingCrisisScenario()
+    await communityHealingScenario()
+    await advocacyOrganisingScenario()
+    await ruralIsolationScenario()
+    
+    console.log('✅ All scenarios completed successfully!')
+    console.log('💜 Journey-aware responses demonstrated across all liberation stages')
+    
+  } catch (error) {
+    console.error('❌ Error running scenarios:', error)
+  }
+}
+
+// For direct execution
+if (require.main === module) {
+  runAllScenarios()
+}

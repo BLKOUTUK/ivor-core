@@ -1,11 +1,14 @@
 {
-  "name": "ivor-backend",
-  "version": "1.0.0",
-  "type": "module",
+  "name": "ivor-core-journey-aware",
+  "version": "2.0.0",
+  "description": "Journey-aware AI assistant for UK Black queer community liberation with contextual response system",
   "scripts": {
     "dev": "tsx src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc",
+    "test": "jest",
+    "test:scenarios": "tsx src/examples/real-world-scenarios.ts",
+    "test:journey": "tsx src/test/journey-system.test.ts",
     "vercel-build": "npm run build"
   },
   "dependencies": {
@@ -31,9 +34,38 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.5",
     "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
     "tsx": "^4.6.0",
     "typescript": "^5.3.3"
   },
-  "main": "dist/server.js"
+  "main": "dist/server.js",
+  "keywords": [
+    "ai-assistant",
+    "journey-aware",
+    "uk-black-queer",
+    "liberation",
+    "contextual-responses",
+    "nhs-integration",
+    "menrus",
+    "community-support"
+  ],
+  "author": "BLKOUT Community",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blkout-community/ivor-core"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "extensionsToTreatAsEsm": [".ts"],
+    "globals": {
+      "ts-jest": {
+        "useESM": true
+      }
+    }
+  }
 }

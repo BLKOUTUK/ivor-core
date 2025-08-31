@@ -8,13 +8,18 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const conversationService_js_1 = __importDefault(require("./conversationService.js"));
-// IVOR-CORE: Personal AI Services Server
+const JourneyAwareConversationService_js_1 = __importDefault(require("./services/JourneyAwareConversationService.js"));
+const feedbackRoutes_js_1 = __importDefault(require("./api/feedbackRoutes.js"));
+// IVOR-CORE: Personal AI Services Server with Journey-Aware Knowledge System
 // Focus: Individual chat, wellness coaching, problem-solving, journaling
+// NEW: UK Black queer liberation journey recognition and contextual responses
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3021;
 // Initialize services
-const conversationService = new conversationService_js_1.default(process.env.SUPABASE_URL || 'mock-url', process.env.SUPABASE_ANON_KEY || 'mock-key');
+const baseConversationService = new conversationService_js_1.default(process.env.SUPABASE_URL || 'mock-url', process.env.SUPABASE_ANON_KEY || 'mock-key');
+// Initialize journey-aware conversation service
+const journeyConversationService = new JourneyAwareConversationService_js_1.default(baseConversationService);
 // Middleware
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
@@ -25,6 +30,8 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true }));
+// API routes
+app.use('/api', feedbackRoutes_js_1.default);
 // Health check
 app.get('/health', (req, res) => {
     res.json({
@@ -39,7 +46,10 @@ app.get('/health', (req, res) => {
             'crisis-support': 'Resource routing',
             'achievements': 'Milestone tracking',
             'ai-memory': 'Personalized context',
-            'recommendations': 'AI-driven suggestions'
+            'recommendations': 'AI-driven suggestions',
+            'journey-awareness': 'UK Black queer liberation stages',
+            'uk-knowledge': 'menrus.co.uk + NHS integration',
+            'contextual-responses': 'Stage-appropriate support'
         }
     });
 });
@@ -52,14 +62,18 @@ app.post('/api/chat', async (req, res) => {
                 error: 'Message is required and must be a string'
             });
         }
-        // Enhanced AI response with full service integration
-        const response = await generateAIResponse(message, userContext, sessionId);
+        // Journey-aware AI response with UK-specific context
+        const journeyResponse = await generateJourneyAwareResponse(message, userContext, sessionId);
         res.json({
-            response,
+            response: journeyResponse.response,
+            journeyContext: journeyResponse.journeyContext,
+            nextStageGuidance: journeyResponse.nextStageGuidance,
             sessionId,
             timestamp: new Date().toISOString(),
             domain: 'core',
-            features: ['wellness', 'problem-solving', 'journaling', 'crisis-support', 'achievements']
+            features: ['wellness', 'problem-solving', 'journaling', 'crisis-support', 'achievements', 'journey-awareness'],
+            resourcesProvided: journeyResponse.resourcesProvided,
+            followUpRequired: journeyResponse.followUpRequired
         });
     }
     catch (error) {
@@ -343,26 +357,67 @@ app.get('/api/user/:userId/progress', async (req, res) => {
     }
 });
 // Helper functions
-async function generateAIResponse(message, context, sessionId) {
+async function generateJourneyAwareResponse(message, context, sessionId) {
     try {
-        if (conversationService.isAIAvailable()) {
+        if (baseConversationService.isAIAvailable()) {
             const conversationContext = {
                 userId: context?.userId || 'anonymous',
                 conversationHistory: [],
                 userProfile: context || {},
                 emotionalState: detectEmotionalState(message),
-                sessionId: sessionId || 'default'
+                sessionId: sessionId || 'default',
+                currentTopic: extractPrimaryTopic(message),
+                lastInteraction: new Date()
             };
-            return await conversationService.generateAIResponse(message, conversationContext, []);
+            const journeyResponse = await journeyConversationService.generateJourneyAwareResponse(message, conversationContext);
+            // Convert JourneyResponse to expected format
+            return {
+                response: journeyResponse.message,
+                journeyContext: {
+                    stage: journeyResponse.journeyStage,
+                    trustScore: journeyResponse.trustScore,
+                    trustLevel: journeyResponse.trustLevel
+                },
+                nextStageGuidance: journeyResponse.nextStagePathway,
+                followUpRequired: journeyResponse.followUpRequired,
+                resourcesProvided: journeyResponse.resources.map(r => r.title)
+            };
         }
         else {
-            return generateFallbackResponse(message);
+            return {
+                response: generateFallbackResponse(message),
+                journeyContext: {
+                    stage: 'growth',
+                    emotion: 'hopeful',
+                    urgency: 'low',
+                    location: { region: 'london', ruralUrban: 'urban', transportAccess: true }
+                },
+                nextStageGuidance: "Continue your journey at your own pace.",
+                followUpRequired: false,
+                resourcesProvided: []
+            };
         }
     }
     catch (error) {
-        console.error('AI response error:', error);
-        return generateFallbackResponse(message);
+        console.error('Journey-aware AI response error:', error);
+        return {
+            response: generateFallbackResponse(message),
+            journeyContext: {
+                stage: 'growth',
+                emotion: 'hopeful',
+                urgency: 'low',
+                location: { region: 'london', ruralUrban: 'urban', transportAccess: true }
+            },
+            nextStageGuidance: "Continue your journey at your own pace.",
+            followUpRequired: false,
+            resourcesProvided: []
+        };
     }
+}
+// Legacy function for compatibility
+async function generateAIResponse(message, context, sessionId) {
+    const journeyResponse = await generateJourneyAwareResponse(message, context, sessionId);
+    return journeyResponse.response;
 }
 function generateFallbackResponse(message) {
     const lowerMessage = message.toLowerCase();
@@ -467,14 +522,35 @@ function analyzeSentiment(content) {
     return 'neutral';
 }
 function detectEmotionalState(message) {
-    // Basic emotional state detection
-    if (message.toLowerCase().includes('excited') || message.toLowerCase().includes('happy'))
+    // Enhanced emotional state detection for journey awareness
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes('excited') || lowerMessage.includes('happy') || lowerMessage.includes('amazing'))
         return 'joyful';
-    if (message.toLowerCase().includes('stress') || message.toLowerCase().includes('overwhelm'))
+    if (lowerMessage.includes('stress') || lowerMessage.includes('overwhelm') || lowerMessage.includes('panic'))
         return 'stressed';
-    if (message.toLowerCase().includes('calm') || message.toLowerCase().includes('peaceful'))
+    if (lowerMessage.includes('calm') || lowerMessage.includes('peaceful') || lowerMessage.includes('stable'))
         return 'calm';
-    return 'neutral';
+    if (lowerMessage.includes('confused') || lowerMessage.includes('lost') || lowerMessage.includes('unsure'))
+        return 'uncertain';
+    if (lowerMessage.includes('crisis') || lowerMessage.includes('emergency') || lowerMessage.includes('desperate'))
+        return 'overwhelmed';
+    return 'uncertain';
+}
+function extractPrimaryTopic(message) {
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes('hiv') || lowerMessage.includes('sexual health') || lowerMessage.includes('prep'))
+        return 'sexual_health';
+    if (lowerMessage.includes('mental health') || lowerMessage.includes('therapy') || lowerMessage.includes('counselling'))
+        return 'mental_health';
+    if (lowerMessage.includes('housing') || lowerMessage.includes('homeless') || lowerMessage.includes('evict'))
+        return 'housing';
+    if (lowerMessage.includes('job') || lowerMessage.includes('work') || lowerMessage.includes('employment'))
+        return 'employment';
+    if (lowerMessage.includes('discrimination') || lowerMessage.includes('rights') || lowerMessage.includes('legal'))
+        return 'legal_rights';
+    if (lowerMessage.includes('community') || lowerMessage.includes('connect') || lowerMessage.includes('group'))
+        return 'community';
+    return 'general_support';
 }
 function getCrisisResources() {
     return [
