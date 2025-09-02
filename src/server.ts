@@ -6,6 +6,8 @@ import ConversationService from './conversationService.js'
 import { getCoreIntegration } from './crossDomainIntegration.js'
 import JourneyAwareConversationService from './services/JourneyAwareConversationService.js'
 import feedbackRoutes from './api/feedbackRoutes.js'
+import adminRoutes from './api/adminRoutes.js'
+import socialMediaRoutes from './api/socialMediaRoutes.js'
 
 // IVOR-CORE: Personal AI Services Server with Journey-Aware Knowledge System
 // Focus: Individual chat, wellness coaching, problem-solving, journaling
@@ -38,6 +40,8 @@ app.use(express.urlencoded({ extended: true }))
 
 // API routes
 app.use('/api', feedbackRoutes)
+app.use('/api/admin', adminRoutes)
+app.use('/api/social', socialMediaRoutes)
 
 // Health check
 app.get('/health', (req, res) => {
