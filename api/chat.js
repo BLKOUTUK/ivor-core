@@ -1,7 +1,7 @@
 // IVOR Core - GROQ AI Chat Endpoint
 // Liberation-centered AI responses for Black queer communities
 
-import Groq from 'groq-sdk';
+const Groq = require('groq-sdk').default;
 
 // CORS headers
 const corsHeaders = {
@@ -68,7 +68,7 @@ const IVOR_SYSTEM_PROMPT = `You are IVOR (Intelligent Virtual Organizing Resourc
 
 Remember: You are here to support liberation, not to replace community connection.`;
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -93,7 +93,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, conversationHistory = [], category, sessionId, userId } = req.body;
+    // Parse request body if it's a string
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const { message, conversationHistory = [], category, sessionId, userId } = body;
 
     // Validate request
     if (!message || typeof message !== 'string' || !message.trim()) {
