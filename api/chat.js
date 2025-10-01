@@ -93,9 +93,8 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Parse request body if it's a string
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { message, conversationHistory = [], category, sessionId, userId } = body;
+    // Vercel automatically parses JSON body, but handle edge cases
+    const { message, conversationHistory = [], category, sessionId, userId } = req.body || {};
 
     // Validate request
     if (!message || typeof message !== 'string' || !message.trim()) {
