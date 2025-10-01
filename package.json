@@ -9,7 +9,7 @@
     "test": "jest",
     "test:scenarios": "tsx src/examples/real-world-scenarios.ts",
     "test:journey": "tsx src/test/journey-system.test.ts",
-    "vercel-build": "npm run build"
+    "vercel-build": "echo 'Skipping build - using serverless API routes only'"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.53.1",
