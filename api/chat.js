@@ -141,7 +141,7 @@ module.exports = async function handler(req, res) {
 
     // Call GROQ API
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-70b-versatile', // Fast, high-quality model
+      model: 'llama-3.3-70b-versatile', // Updated model (llama-3.1 decommissioned)
       messages: messages,
       temperature: 0.7,
       max_tokens: 1000,
@@ -158,7 +158,7 @@ module.exports = async function handler(req, res) {
       success: true,
       response: aiResponse,
       source: 'groq-ai',
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       service: 'ivor-core',
       serviceName: 'IVOR Core - Personal AI Services',
       sessionId: sessionId || `session-${Date.now()}`,
