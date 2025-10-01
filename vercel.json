@@ -1,26 +1,12 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "dist/server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/**"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/dist/server.js"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     }
   ],
   "env": {
-    "SUPABASE_URL": "https://demo.supabase.co",
-    "SUPABASE_ANON_KEY": "demo_anon_key_for_beta_testing",
-    "SUPABASE_SERVICE_ROLE_KEY": "demo_service_role_key_for_beta_testing",
-    "GROQ_API_KEY": "demo_groq_key_for_beta_testing",
-    "REDIS_URL": "redis://demo-redis:6379",
     "NODE_ENV": "production"
   }
 }
