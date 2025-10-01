@@ -24,26 +24,33 @@ AI-powered personal wellness support with community-focused crisis intervention 
 
 ## 🛠️ Technical Implementation
 
-**Framework**: Node.js serverless function on Vercel  
-**AI Integration**: Community-focused response generation  
-**Health Resources**: Direct integration with menrus.co.uk health platform  
-**Crisis Support**: Real crisis hotlines and immediate resources  
+**Framework**: Node.js serverless function on Vercel
+**AI Integration**: **GROQ AI (Llama 3.1 70B)** - Real AI-powered liberation-centered responses
+**Fallback System**: Pattern-matching when AI unavailable
+**Health Resources**: Direct integration with menrus.co.uk health platform
+**Crisis Support**: Real UK crisis hotlines and immediate resources
 
-## 📦 Actual Dependencies
+## 📦 Dependencies
 
 ```json
 {
   "dependencies": {
+    "groq-sdk": "^0.30.0",
+    "@supabase/supabase-js": "^2.53.1",
     "@vercel/node": "^3.x"
   }
 }
 ```
 
-**No External Services Required:**
-- ❌ No database connection (stateless serverless function)
-- ❌ No Redis dependency  
-- ✅ Direct community-focused response generation
+**Services:**
+- ✅ **GROQ AI** - Fast, high-quality AI responses with Llama 3.1 70B
+- ✅ **Supabase** - Database integration for conversation storage
+- ✅ **Fallback System** - Pattern-matching when AI unavailable
 - ✅ Integration with established health resources (menrus.co.uk)
+
+**Setup Required:**
+- GROQ API key (get from [console.groq.com](https://console.groq.com))
+- See [GROQ_SETUP.md](./GROQ_SETUP.md) for complete setup instructions
 
 ## 🚀 API Endpoints (Current Implementation)
 
@@ -53,24 +60,42 @@ GET /api/health
 ```
 Returns: IVOR Core service status and wellness capabilities
 
-### **Community-Focused Chat**  
+### **AI-Powered Community Chat**
 ```
 POST /api/chat
 Content-Type: application/json
 
 {
   "message": "your wellness query here",
+  "conversationHistory": [],
   "userId": "optional",
-  "sessionId": "optional"
+  "sessionId": "optional",
+  "category": "optional"
 }
 ```
 
-**Response Types:**
-- **Crisis Intervention**: Immediate resources + culturally affirming support
-- **Anxiety Support**: Grounding techniques + systemic context
-- **HIV Services**: Specific menrus.co.uk resources + community context  
-- **Mental Wellness**: Community-based therapy and support connections
+**AI Response Types (GROQ AI):**
+- **Crisis Intervention**: Immediate UK crisis resources + culturally affirming support
+- **Sexual Health**: NHS services, PrEP, menrus.co.uk resources
+- **Mental Wellness**: Therapy, grounding techniques, UK support services
+- **Community Support**: Organizing, liberation principles, mutual aid
 - **Decision Support**: BLKOUT framework for community-centered choices
+
+**Response Format:**
+```json
+{
+  "success": true,
+  "response": "AI-generated liberation-centered response...",
+  "source": "groq-ai",
+  "model": "llama-3.1-70b-versatile",
+  "service": "ivor-core",
+  "communityFocused": true,
+  "culturallyAffirming": true,
+  "liberation": "✊🏾 Powered by community-owned AI"
+}
+```
+
+**Fallback**: If GROQ AI unavailable, uses pattern-matching responses
 
 ## 🌐 Live Deployment
 
