@@ -1,7 +1,7 @@
 // IVOR Core - GROQ AI Chat Endpoint
 // Liberation-centered AI responses for Black queer communities
 
-const Groq = require('groq-sdk').default;
+const Groq = require('groq-sdk');
 
 // CORS headers
 const corsHeaders = {
