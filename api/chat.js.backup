@@ -1,13 +1,7 @@
-// IVOR Core - GROQ AI Chat Endpoint with RAG Enhancement
+// IVOR Core - GROQ AI Chat Endpoint
 // Liberation-centered AI responses for Black queer communities
-// Enhanced with semantic search for real-time community resource discovery
 
 const Groq = require('groq-sdk');
-
-// RAG Enhancement: Import semantic search utilities
-const { searchResources, isSemanticSearchAvailable } = require('../src/utils/semanticSearch');
-const { detectResourceIntent, detectCrisis } = require('../src/utils/resourceDetection');
-const { formatResourcesForLLM, formatResourcesForFrontend, formatCrisisContext } = require('../src/utils/resourceFormatter');
 
 // CORS headers
 const corsHeaders = {
@@ -132,70 +126,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // ========================================
-    // RAG ENHANCEMENT: Semantic Search Integration
-    // ========================================
-
-    // Detect if user needs resources or is in crisis
-    const needsResources = detectResourceIntent(message);
-    const { isCrisis, severity } = detectCrisis(message);
-
-    let contextResources = [];
-    let enhancedSystemPrompt = IVOR_SYSTEM_PROMPT;
-
-    console.log(`[RAG] Resource intent: ${needsResources}, Crisis: ${isCrisis} (${severity})`);
-
-    // If user needs resources or is in crisis, attempt semantic search
-    if (needsResources || isCrisis) {
-      try {
-        // Check if semantic search is available
-        const searchAvailable = await isSemanticSearchAvailable();
-
-        if (searchAvailable) {
-          console.log('[RAG] Semantic search available, executing search...');
-
-          // Determine search query
-          const searchQuery = isCrisis
-            ? 'crisis mental health immediate support LGBT helpline UK'
-            : message;
-
-          // Execute semantic search
-          contextResources = await searchResources(searchQuery, 3, 0.5);
-
-          console.log(`[RAG] Found ${contextResources.length} resources`);
-
-          // If resources found, enhance system prompt
-          if (contextResources.length > 0) {
-            if (isCrisis) {
-              // Crisis-specific formatting
-              const crisisContext = formatCrisisContext(contextResources, severity);
-              enhancedSystemPrompt += '\n\n' + crisisContext;
-              console.log(`[RAG CRISIS] Enhanced prompt with ${contextResources.length} crisis resources (severity: ${severity})`);
-            } else {
-              // Standard resource formatting
-              const resourceContext = formatResourcesForLLM(contextResources);
-              enhancedSystemPrompt += '\n\n' + resourceContext;
-              console.log(`[RAG] Enhanced prompt with ${contextResources.length} community resources`);
-            }
-          } else {
-            console.log('[RAG] No resources found matching query');
-          }
-        } else {
-          console.warn('[RAG] Semantic search unavailable, continuing without RAG enhancement');
-        }
-      } catch (searchError) {
-        // Graceful degradation - log error but continue without resources
-        console.error('[RAG] Search failed:', searchError.message);
-        console.log('[RAG] Continuing with standard response (graceful degradation)');
-      }
-    } else {
-      console.log('[RAG] No resource intent detected, using standard prompt');
-    }
-
-    // ========================================
-    // GROQ AI Call (with enhanced prompt if RAG succeeded)
-    // ========================================
-
     // Initialize GROQ client
     const groq = new Groq({
       apiKey: groqApiKey
@@ -203,7 +133,7 @@ module.exports = async function handler(req, res) {
 
     // Build conversation messages for GROQ
     const messages = [
-      { role: 'system', content: enhancedSystemPrompt },
+      { role: 'system', content: IVOR_SYSTEM_PROMPT },
       ...conversationHistory.slice(-10), // Keep last 10 messages for context
       { role: 'user', content: message }
     ];
@@ -223,11 +153,7 @@ module.exports = async function handler(req, res) {
       throw new Error('No response from GROQ API');
     }
 
-    // ========================================
-    // Build Response (with resources if found)
-    // ========================================
-
-    const response = {
+    return res.status(200).json({
       success: true,
       response: aiResponse,
       source: 'groq-ai',
@@ -241,18 +167,7 @@ module.exports = async function handler(req, res) {
       culturallyAffirming: true,
       liberation: '✊🏾 Powered by community-owned AI',
       timestamp: new Date().toISOString()
-    };
-
-    // RAG Enhancement: Attach resources if found
-    if (contextResources.length > 0) {
-      response.resources = formatResourcesForFrontend(contextResources);
-      response.resourceCount = contextResources.length;
-      response.enhancedWithRAG = true;
-
-      console.log(`[RAG SUCCESS] Response includes ${contextResources.length} resources`);
-    }
-
-    return res.status(200).json(response);
+    });
 
   } catch (error) {
     console.error('IVOR chat error:', error);
