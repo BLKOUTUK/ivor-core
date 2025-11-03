@@ -1,11 +1,12 @@
 import express from 'express'
 import Groq from 'groq-sdk'
+import { google } from 'googleapis'
 
 const router = express.Router()
 
 const BROWSERACT_SECRET = process.env.BROWSERACT_SECRET_TOKEN || ''
 const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID || ''
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || ''
+const GOOGLE_SERVICE_ACCOUNT_JSON = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ''
 
 // Initialize Groq client
 const groq = new Groq({
@@ -269,17 +270,28 @@ RESPOND ONLY WITH THIS JSON FORMAT (no other text):
 }
 
 /**
- * Write event to Google Sheets
+ * Write event to Google Sheets using Service Account authentication
  */
 async function writeToGoogleSheets(eventData: any, status: string): Promise<void> {
-  if (!GOOGLE_SHEET_ID || !GOOGLE_API_KEY) {
+  if (!GOOGLE_SHEET_ID || !GOOGLE_SERVICE_ACCOUNT_JSON) {
     console.warn('[Google Sheets] Not configured - skipping write')
     return
   }
 
   try {
+    // Parse service account credentials
+    const credentials = JSON.parse(GOOGLE_SERVICE_ACCOUNT_JSON)
+
+    // Create auth client with Service Account
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    })
+
+    const authClient = await auth.getClient()
+    const sheets = google.sheets({ version: 'v4', auth: authClient as any })
+
     const sheetName = status === 'auto-approved' ? 'Events_Published' : 'Events_PendingReview'
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_SHEET_ID}/values/${sheetName}:append?valueInputOption=RAW&key=${GOOGLE_API_KEY}`
 
     const row = [
       eventData.submitted_at || new Date().toISOString(),
@@ -306,15 +318,14 @@ async function writeToGoogleSheets(eventData: any, status: string): Promise<void
       ''
     ]
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: [row] })
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: GOOGLE_SHEET_ID,
+      range: `${sheetName}!A:V`,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [row]
+      }
     })
-
-    if (!response.ok) {
-      throw new Error(`Google Sheets API error: ${response.status}`)
-    }
 
     console.log(`[Google Sheets] Written to ${sheetName}: ${eventData.title}`)
 
