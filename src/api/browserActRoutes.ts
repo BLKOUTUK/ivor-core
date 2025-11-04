@@ -166,7 +166,7 @@ async function moderateEventContent(content: BrowserActEvent): Promise<any> {
 
   try {
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
@@ -324,7 +324,8 @@ async function writeToSupabase(eventData: any, status: string): Promise<void> {
 
   } catch (error) {
     console.error('[Supabase] Write failed:', error)
-    // Don't throw - we don't want to fail the entire request
+    // Re-throw so webhook response indicates database failure
+    throw new Error(`Database write failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
