@@ -36,6 +36,7 @@ interface BrowserActEvent {
  */
 router.post('/webhook', async (req, res) => {
   const startTime = Date.now()
+  console.log('[BrowserAct] 🚀 DEPLOYMENT v197585f - llama-3.3-70b-versatile + Supabase ACTIVE')
 
   try {
     // Validate authentication
