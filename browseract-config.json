@@ -1,0 +1,522 @@
+{
+  "name": "BLKOUT UK Black QTIPOC+ Events Scraper",
+  "description": "Automated scraping of UK events for Black queer and trans communities",
+  "version": "1.0.0",
+
+  "webhook": {
+    "url": "https://ivor-core-production.up.railway.app/api/browseract/webhook",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "X-BrowserAct-Token": "DI9qU+3JW9jmlV0e5ti+accAZDRYzthYz9WYsldlExc="
+    }
+  },
+
+  "schedule": {
+    "frequency": "daily",
+    "time": "06:00",
+    "timezone": "Europe/London"
+  },
+
+  "sources": [
+    {
+      "name": "Eventbrite UK - Black Queer",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black queer",
+        "location": "London, UK",
+        "radius": "50km",
+        "date_range": "next_90_days",
+        "categories": ["community", "arts", "health-wellness"]
+      }
+    },
+    {
+      "name": "Eventbrite UK - QTIPOC",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "qtipoc",
+        "location": "London, UK",
+        "radius": "50km",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black LGBT",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black lgbt",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black Trans",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black trans",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black Pride",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black pride",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black Writing",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black writing",
+        "location": "UK",
+        "date_range": "next_90_days",
+        "note": "Found in 5+ approved events"
+      }
+    },
+    {
+      "name": "Eventbrite UK - QTIPOC Writing",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "qtipoc writing",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black Creative",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black creative",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Queer Poetry",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "queer poetry",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - LGBTQ 40+",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "lgbtq 40+",
+        "location": "UK",
+        "date_range": "next_90_days",
+        "note": "Age-specific groups are strong pattern in approved events"
+      }
+    },
+    {
+      "name": "Eventbrite UK - LGBTQ 50+",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "lgbtq 50+",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Older LGBTQ Black",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "older lgbtq black",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black Wellness LGBTQ",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black wellness lgbtq",
+        "location": "UK",
+        "date_range": "next_90_days",
+        "note": "Wellness/healing is popular theme in approved events"
+      }
+    },
+    {
+      "name": "Eventbrite UK - QTIPOC Healing",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "qtipoc healing",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Queer Joy Black",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "queer joy black",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Queer Gaming",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "queer gaming",
+        "location": "UK",
+        "date_range": "next_90_days",
+        "note": "Social/gaming events found in multiple approved events"
+      }
+    },
+    {
+      "name": "Eventbrite UK - LGBTQ Board Games Black",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "lgbtq board games black",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black Queer Book Club",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black queer book club",
+        "location": "UK",
+        "date_range": "next_90_days",
+        "note": "Book clubs found in approved events"
+      }
+    },
+    {
+      "name": "Eventbrite UK - QTIPOC Film Club",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "qtipoc film club",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Black LGBTQ Networking",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "black lgbtq networking",
+        "location": "UK",
+        "date_range": "next_90_days",
+        "note": "Professional development (Industry Takeover events)"
+      }
+    },
+    {
+      "name": "Eventbrite UK - Queer Black Industry",
+      "type": "eventbrite",
+      "enabled": true,
+      "config": {
+        "search_query": "queer black industry",
+        "location": "UK",
+        "date_range": "next_90_days"
+      }
+    },
+    {
+      "name": "lgbthero.org.uk (LGBT Foundation)",
+      "type": "web_scrape",
+      "enabled": true,
+      "config": {
+        "url": "https://www.lgbthero.org.uk/Event",
+        "selectors": {
+          "event_list": ".event-item, .event-card, article[class*='event']",
+          "title": "h2, h3, .event-title, .title",
+          "description": ".event-description, .description, p",
+          "date": ".event-date, .date, time",
+          "location": ".event-location, .location",
+          "link": "a"
+        },
+        "note": "13% of approved events come from here - was completely missing!"
+      }
+    },
+    {
+      "name": "UK Black Pride",
+      "type": "web_scrape",
+      "enabled": true,
+      "config": {
+        "url": "https://www.ukblackpride.org.uk/events",
+        "selectors": {
+          "event_list": ".event-card",
+          "title": ".event-title",
+          "description": ".event-description",
+          "date": ".event-date",
+          "location": ".event-location"
+        }
+      }
+    },
+    {
+      "name": "Gendered Intelligence",
+      "type": "web_scrape",
+      "enabled": true,
+      "config": {
+        "url": "https://genderedintelligence.co.uk/events",
+        "selectors": {
+          "event_list": ".tribe-events-list-event-row",
+          "title": ".tribe-event-url",
+          "description": ".tribe-events-list-event-description",
+          "date": ".tribe-event-date-start",
+          "location": ".tribe-events-venue-details"
+        },
+        "filters": {
+          "keywords": ["black", "qtipoc", "people of color", "poc"]
+        }
+      }
+    },
+    {
+      "name": "OutSavvy London - Black Queer",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.outsavvy.com/v1/events/search",
+        "params": {
+          "q": "black queer",
+          "latitude": 51.5074,
+          "longitude": -0.1278,
+          "range": 25
+        },
+        "headers": {
+          "Authorization": "Partner ZR8JUA8ILRSSVWUNFIT3"
+        },
+        "note": "40% of approved events come from OutSavvy - #1 producer!"
+      }
+    },
+    {
+      "name": "OutSavvy London - QTIPOC",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.outsavvy.com/v1/events/search",
+        "params": {
+          "q": "qtipoc",
+          "latitude": 51.5074,
+          "longitude": -0.1278,
+          "range": 25
+        },
+        "headers": {
+          "Authorization": "Partner ZR8JUA8ILRSSVWUNFIT3"
+        }
+      }
+    },
+    {
+      "name": "OutSavvy London - Black LGBT",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.outsavvy.com/v1/events/search",
+        "params": {
+          "q": "black lgbt",
+          "latitude": 51.5074,
+          "longitude": -0.1278,
+          "range": 25
+        },
+        "headers": {
+          "Authorization": "Partner ZR8JUA8ILRSSVWUNFIT3"
+        }
+      }
+    },
+    {
+      "name": "OutSavvy London - Black Trans",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.outsavvy.com/v1/events/search",
+        "params": {
+          "q": "black trans",
+          "latitude": 51.5074,
+          "longitude": -0.1278,
+          "range": 25
+        },
+        "headers": {
+          "Authorization": "Partner ZR8JUA8ILRSSVWUNFIT3"
+        }
+      }
+    },
+    {
+      "name": "OutSavvy London - Queer Writing",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.outsavvy.com/v1/events/search",
+        "params": {
+          "q": "queer writing",
+          "latitude": 51.5074,
+          "longitude": -0.1278,
+          "range": 25
+        },
+        "headers": {
+          "Authorization": "Partner ZR8JUA8ILRSSVWUNFIT3"
+        },
+        "note": "Found in approved events"
+      }
+    },
+    {
+      "name": "OutSavvy London - LGBTQ Black Wellness",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.outsavvy.com/v1/events/search",
+        "params": {
+          "q": "lgbtq black wellness",
+          "latitude": 51.5074,
+          "longitude": -0.1278,
+          "range": 25
+        },
+        "headers": {
+          "Authorization": "Partner ZR8JUA8ILRSSVWUNFIT3"
+        },
+        "note": "Popular theme"
+      }
+    },
+    {
+      "name": "OutSavvy London - Queer Gaming",
+      "type": "api",
+      "enabled": true,
+      "config": {
+        "base_url": "https://api.outsavvy.com/v1/events/search",
+        "params": {
+          "q": "queer gaming",
+          "latitude": 51.5074,
+          "longitude": -0.1278,
+          "range": 25
+        },
+        "headers": {
+          "Authorization": "Partner ZR8JUA8ILRSSVWUNFIT3"
+        },
+        "note": "Social events found"
+      }
+    },
+    {
+      "name": "LGBT Consortium",
+      "type": "web_scrape",
+      "enabled": true,
+      "config": {
+        "url": "https://www.consortium.lgbt/events",
+        "selectors": {
+          "event_list": ".event-item, .event-card, article",
+          "title": "h2, h3, .title",
+          "description": ".description, p",
+          "date": ".date, time",
+          "location": ".location",
+          "link": "a"
+        },
+        "filters": {
+          "keywords": ["black", "qtipoc", "people of color", "poc", "african", "caribbean"]
+        },
+        "note": "UK charity representing 600+ LGBT+ organizations"
+      }
+    },
+    {
+      "name": "QX Magazine London",
+      "type": "web_scrape",
+      "enabled": true,
+      "config": {
+        "url": "https://www.qxmagazine.com/events/",
+        "selectors": {
+          "event_list": ".event-listing, .event-item",
+          "title": ".event-title, h2, h3",
+          "description": ".event-description",
+          "date": ".event-date",
+          "location": ".event-venue",
+          "link": "a"
+        },
+        "filters": {
+          "keywords": ["black", "qtipoc", "people of color", "poc", "african", "caribbean"]
+        },
+        "note": "Free LGBTQ+ listings magazine - major London event source"
+      }
+    },
+    {
+      "name": "Attitude Magazine",
+      "type": "web_scrape",
+      "enabled": true,
+      "config": {
+        "url": "https://attitude.co.uk/events",
+        "selectors": {
+          "event_list": ".event, article[class*='event']",
+          "title": ".event-title, h2, h3",
+          "description": ".event-description, .description",
+          "date": ".event-date, time",
+          "location": ".event-location",
+          "link": "a"
+        },
+        "filters": {
+          "keywords": ["black", "qtipoc", "people of color", "poc", "african", "caribbean"]
+        },
+        "note": "UK's best-selling LGBTQ+ magazine with national event coverage"
+      }
+    },
+    {
+      "name": "Stonewall UK Events",
+      "type": "web_scrape",
+      "enabled": false,
+      "config": {
+        "url": "https://www.stonewall.org.uk/events",
+        "note": "Requires authentication - disabled for now"
+      }
+    }
+  ],
+
+  "filters": {
+    "required_keywords": [
+      "black", "african", "caribbean", "qtipoc", "queer", "trans",
+      "lgbtq", "lgbt", "gay", "lesbian", "bisexual", "poc", "people of color"
+    ],
+    "exclude_keywords": [
+      "corporate training", "diversity workshop for companies"
+    ],
+    "location_filter": {
+      "countries": ["UK", "United Kingdom", "England", "Scotland", "Wales"],
+      "cities": ["London", "Manchester", "Birmingham", "Bristol", "Leeds", "Glasgow", "Edinburgh"]
+    }
+  },
+
+  "output_format": {
+    "type": "event",
+    "required_fields": ["title", "description", "source_url"],
+    "optional_fields": ["event_date", "location", "organizer_name", "tags", "price", "image_url"],
+    "batch_size": 10,
+    "deduplication": {
+      "enabled": true,
+      "fields": ["title", "event_date", "location"]
+    }
+  },
+
+  "error_handling": {
+    "retry_attempts": 3,
+    "retry_delay_seconds": 5,
+    "skip_on_error": true,
+    "notify_on_failure": true
+  },
+
+  "logging": {
+    "level": "info",
+    "log_scraping_stats": true,
+    "log_webhook_responses": true
+  }
+}

@@ -1,0 +1,41 @@
+name: Daily Event Scraping
+
+on:
+  schedule:
+    # Run at 6:00 AM UTC (7:00 AM UK time during summer, 6:00 AM UK time during winter)
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  scrape-events:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install axios cheerio node-fetch
+
+      - name: Scrape and send events
+        env:
+          WEBHOOK_URL: https://ivor-core-production.up.railway.app/api/browseract/webhook
+          BROWSERACT_TOKEN: ${{ secrets.BROWSERACT_TOKEN }}
+          EVENTBRITE_API_TOKEN: ${{ secrets.EVENTBRITE_API_TOKEN }}
+          OUTSAVVY_API_KEY: ${{ secrets.OUTSAVVY_API_KEY }}
+        run: node scripts/scrape-and-webhook.js
+
+      - name: Upload scraping logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraping-logs-${{ github.run_number }}
+          path: scraping-*.log
+          retention-days: 7
