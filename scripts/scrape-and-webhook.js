@@ -13,7 +13,7 @@ const fs = require('fs');
 const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://localhost:8080/api/browseract/webhook';
 const BROWSERACT_TOKEN = process.env.BROWSERACT_TOKEN;
 const EVENTBRITE_TOKEN = process.env.EVENTBRITE_API_TOKEN;
-const OUTSAVVY_API_KEY = process.env.OUTSAVVY_API_KEY || 'Partner ZR8JUA8ILRSSVWUNFIT3';
+const OUTSAVVY_API_KEY = process.env.OUTSAVVY_API_KEY || 'ZR8JUA8ILRSSVWUNFIT3';
 
 const LOG_FILE = `scraping-${new Date().toISOString().split('T')[0]}.log`;
 
@@ -287,7 +287,7 @@ async function scrapeOutSavvy() {
             end_date: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
           },
           headers: {
-            'Authorization': OUTSAVVY_API_KEY
+            'Authorization': `Partner ${OUTSAVVY_API_KEY}`
           },
           timeout: 15000
         }
