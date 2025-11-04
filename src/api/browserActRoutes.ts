@@ -1,6 +1,6 @@
 import express from 'express'
 import Groq from 'groq-sdk'
-import { createClient } from '@supabase/supabase-js'
+import axios from 'axios'
 
 const router = express.Router()
 
@@ -11,29 +11,15 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || ''
 })
 
-// Initialize Supabase client with service_role key
+// Supabase REST API configuration
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim()
 const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 
-console.log('[BrowserAct] 🔍 Supabase initialization:', {
+console.log('[BrowserAct] 🔍 Supabase REST API config:', {
   url: SUPABASE_URL,
   keyLength: SUPABASE_KEY.length,
-  keyPrefix: SUPABASE_KEY.substring(0, 25),
-  keySuffix: SUPABASE_KEY.substring(SUPABASE_KEY.length - 15),
-  hasKey: SUPABASE_KEY.length > 0,
-  hasUrl: SUPABASE_URL.length > 0
+  restEndpoint: `${SUPABASE_URL}/rest/v1/browseract_events`
 })
-
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-)
 
 interface BrowserActEvent {
   type: 'event' | 'news'
@@ -293,7 +279,7 @@ RESPOND ONLY WITH THIS JSON FORMAT (no other text):
 }
 
 /**
- * Write event to Supabase database
+ * Write event to Supabase database using REST API
  */
 async function writeToSupabase(eventData: any, status: string): Promise<void> {
   try {
@@ -329,23 +315,29 @@ async function writeToSupabase(eventData: any, status: string): Promise<void> {
       approval_status: status === 'auto-approved' ? 'approved' : 'pending_review'
     }
 
-    const { data, error } = await supabase
-      .from('browseract_events')
-      .insert(dbEvent)
-      .select()
-      .single()
+    // Use Supabase REST API directly
+    const response = await axios.post(
+      `${SUPABASE_URL}/rest/v1/browseract_events`,
+      dbEvent,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
+      }
+    )
 
-    if (error) {
-      throw error
-    }
-
-    console.log(`[Supabase] Event saved (${status}): ${eventData.title} [ID: ${data.id}]`)
+    const savedEvent = response.data[0]
+    console.log(`[Supabase REST] ✅ Event saved (${status}): ${eventData.title} [ID: ${savedEvent.id}]`)
 
   } catch (error) {
-    console.error('[Supabase] Write failed:', JSON.stringify(error, null, 2))
-    // Re-throw with detailed error info
-    const errorMsg = error instanceof Error ? error.message : (error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unknown error')
-    throw new Error(`Database write failed: ${errorMsg}`)
+    console.error('[Supabase REST] ❌ Write failed:', error instanceof Error ? error.message : error)
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('[Supabase REST] Response:', error.response.status, error.response.data)
+    }
+    throw new Error(`Database write failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
