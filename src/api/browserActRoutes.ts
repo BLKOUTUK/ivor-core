@@ -12,14 +12,16 @@ const groq = new Groq({
 })
 
 // Initialize Supabase client with service_role key
-const SUPABASE_URL = process.env.SUPABASE_URL || ''
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim()
+const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 
-console.log('[BrowserAct] Supabase config check:', {
+console.log('[BrowserAct] 🔍 Supabase initialization:', {
   url: SUPABASE_URL,
   keyLength: SUPABASE_KEY.length,
-  keyStart: SUPABASE_KEY.substring(0, 20),
-  keyEnd: SUPABASE_KEY.substring(SUPABASE_KEY.length - 20)
+  keyPrefix: SUPABASE_KEY.substring(0, 25),
+  keySuffix: SUPABASE_KEY.substring(SUPABASE_KEY.length - 15),
+  hasKey: SUPABASE_KEY.length > 0,
+  hasUrl: SUPABASE_URL.length > 0
 })
 
 const supabase = createClient(
