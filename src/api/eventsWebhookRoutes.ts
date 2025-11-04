@@ -4,7 +4,7 @@ import axios from 'axios'
 
 const router = express.Router()
 
-const BROWSERACT_SECRET = process.env.BROWSERACT_SECRET_TOKEN || ''
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET_TOKEN || ''
 
 // Initialize Groq client
 const groq = new Groq({
@@ -21,7 +21,7 @@ console.log('[BrowserAct] 🔍 Supabase REST API config:', {
   restEndpoint: `${SUPABASE_URL}/rest/v1/browseract_events`
 })
 
-interface BrowserActEvent {
+interface IncomingEvent {
   type: 'event' | 'news'
   title: string
   description: string
@@ -35,26 +35,26 @@ interface BrowserActEvent {
 }
 
 /**
- * BrowserAct Webhook Endpoint
- * Receives scraped events and sends them through IVOR moderation
+ * Events Webhook Endpoint
+ * Receives scraped events (from BrowserAct or other sources) and sends them through IVOR moderation
  */
 router.post('/webhook', async (req, res) => {
   const startTime = Date.now()
-  console.log('[BrowserAct] 🚀 DEPLOYMENT v197585f - llama-3.3-70b-versatile + Supabase ACTIVE')
+  console.log('[Events Webhook] 🚀 DEPLOYMENT v197585f - llama-3.3-70b-versatile + Supabase ACTIVE')
 
   try {
     // Validate authentication
-    const authToken = req.headers['x-browseract-token'] || req.headers['X-BrowserAct-Token']
-    if (BROWSERACT_SECRET && authToken !== BROWSERACT_SECRET) {
+    const authToken = req.headers['x-webhook-token'] || req.headers['X-Webhook-Token']
+    if (WEBHOOK_SECRET && authToken !== WEBHOOK_SECRET) {
       return res.status(401).json({
         error: 'Unauthorized',
-        message: 'Invalid BrowserAct token'
+        message: 'Invalid webhook token'
       })
     }
 
     // Parse incoming events
     const body = req.body
-    const events: BrowserActEvent[] = Array.isArray(body.events) ? body.events : [body]
+    const events: IncomingEvent[] = Array.isArray(body.events) ? body.events : [body]
 
     if (events.length === 0) {
       return res.status(400).json({
@@ -63,7 +63,7 @@ router.post('/webhook', async (req, res) => {
       })
     }
 
-    console.log(`[BrowserAct] Received ${events.length} events for processing`)
+    console.log(`[Events Webhook] Received ${events.length} events for processing`)
 
     // Process events through IVOR moderation
     const results = await Promise.all(
@@ -108,7 +108,7 @@ router.post('/webhook', async (req, res) => {
           }
 
         } catch (error) {
-          console.error(`[BrowserAct] Error processing event: ${eventData.title}`, error)
+          console.error(`[Events Webhook] Error processing event: ${eventData.title}`, error)
 
           // On error, send to manual review
           await writeToSupabase({
@@ -116,7 +116,7 @@ router.post('/webhook', async (req, res) => {
             moderation_status: 'review-deep',
             ivor_confidence: '0%',
             ivor_reasoning: 'AI moderation failed - requires manual review',
-            submitted_by: 'browseract-automation',
+            submitted_by: 'automation',
             submitted_at: new Date().toISOString(),
             flags: 'error'
           }, 'review-deep')
@@ -140,7 +140,7 @@ router.post('/webhook', async (req, res) => {
       processing_time_ms: Date.now() - startTime
     }
 
-    console.log('[BrowserAct] Processing complete:', stats)
+    console.log('[Events Webhook] Processing complete:', stats)
 
     res.json({
       success: true,
@@ -154,7 +154,7 @@ router.post('/webhook', async (req, res) => {
     })
 
   } catch (error) {
-    console.error('[BrowserAct] Fatal error:', error)
+    console.error('[Events Webhook] Fatal error:', error)
     res.status(500).json({
       error: 'Processing failed',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -166,7 +166,7 @@ router.post('/webhook', async (req, res) => {
 /**
  * Moderate event content using IVOR AI
  */
-async function moderateEventContent(content: BrowserActEvent): Promise<any> {
+async function moderateEventContent(content: IncomingEvent): Promise<any> {
   const prompt = buildModerationPrompt(content)
 
   try {
@@ -220,7 +220,7 @@ async function moderateEventContent(content: BrowserActEvent): Promise<any> {
 /**
  * Build moderation prompt for event content
  */
-function buildModerationPrompt(content: BrowserActEvent): string {
+function buildModerationPrompt(content: IncomingEvent): string {
   return `
 You are IVOR, the AI moderator for BLKOUT - a liberation platform for and by Black queer and trans people in the UK.
 
@@ -293,7 +293,7 @@ async function writeToSupabase(eventData: any, status: string): Promise<void> {
     // Prepare event data for database
     const dbEvent = {
       submitted_at: eventData.submitted_at || new Date().toISOString(),
-      submitted_by: eventData.submitted_by || 'browseract-automation',
+      submitted_by: eventData.submitted_by || 'automation',
       content_type: 'events',
       title: eventData.title || '',
       description: eventData.description || null,

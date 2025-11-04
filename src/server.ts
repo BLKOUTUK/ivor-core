@@ -9,7 +9,7 @@ import feedbackRoutes from './api/feedbackRoutes.js'
 import adminRoutes from './api/adminRoutes.js'
 import socialMediaRoutes from './api/socialMediaRoutes.js'
 import moderationRoutes from './api/moderationRoutes.js'
-import browserActRoutes from './api/browserActRoutes.js'
+import eventsWebhookRoutes from './api/eventsWebhookRoutes.js'
 
 // IVOR-CORE: Personal AI Services Server with Journey-Aware Knowledge System
 // Focus: Individual chat, wellness coaching, problem-solving, journaling
@@ -45,7 +45,7 @@ app.use('/api', feedbackRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/social', socialMediaRoutes)
 app.use('/api', moderationRoutes)
-app.use('/api/browseract', browserActRoutes)
+app.use('/api/events', eventsWebhookRoutes)
 
 // Health check
 app.get('/health', (req, res) => {
