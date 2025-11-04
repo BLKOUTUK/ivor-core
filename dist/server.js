@@ -12,6 +12,8 @@ const JourneyAwareConversationService_js_1 = __importDefault(require("./services
 const feedbackRoutes_js_1 = __importDefault(require("./api/feedbackRoutes.js"));
 const adminRoutes_js_1 = __importDefault(require("./api/adminRoutes.js"));
 const socialMediaRoutes_js_1 = __importDefault(require("./api/socialMediaRoutes.js"));
+const moderationRoutes_js_1 = __importDefault(require("./api/moderationRoutes.js"));
+const browserActRoutes_js_1 = __importDefault(require("./api/browserActRoutes.js"));
 // IVOR-CORE: Personal AI Services Server with Journey-Aware Knowledge System
 // Focus: Individual chat, wellness coaching, problem-solving, journaling
 // NEW: UK Black queer liberation journey recognition and contextual responses
@@ -36,6 +38,8 @@ app.use(express_1.default.urlencoded({ extended: true }));
 app.use('/api', feedbackRoutes_js_1.default);
 app.use('/api/admin', adminRoutes_js_1.default);
 app.use('/api/social', socialMediaRoutes_js_1.default);
+app.use('/api', moderationRoutes_js_1.default);
+app.use('/api/browseract', browserActRoutes_js_1.default);
 // Health check
 app.get('/health', (req, res) => {
     res.json({

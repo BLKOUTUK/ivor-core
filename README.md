@@ -25,10 +25,11 @@ AI-powered personal wellness support with community-focused crisis intervention 
 ## 🛠️ Technical Implementation
 
 **Framework**: Node.js serverless function on Vercel
-**AI Integration**: **GROQ AI (Llama 3.1 70B)** - Real AI-powered liberation-centered responses
+**AI Integration**: **GROQ AI (Llama 3.3 70B)** - Real AI-powered liberation-centered responses
 **Fallback System**: Pattern-matching when AI unavailable
 **Health Resources**: Direct integration with menrus.co.uk health platform
-**Crisis Support**: Real UK crisis hotlines and immediate resources
+**Crisis Support**: UK-specific crisis hotlines (Samaritans, LGBT+ Switchboard, Galop, Mindline Trans+)
+**Deployment**: ✅ Live in production with GROQ_API_KEY configured in Vercel
 
 ## 📦 Dependencies
 
@@ -99,8 +100,9 @@ Content-Type: application/json
 
 ## 🌐 Live Deployment
 
-**Production URL**: https://ivor-core-gj4mxzljt-robs-projects-54d653d3.vercel.app  
-**Status**: ✅ OPERATIONAL - Crisis support and wellness guidance working
+**Production URL**: https://ivor-core-r2dq6g1cc-robs-projects-54d653d3.vercel.app
+**Status**: ✅ OPERATIONAL - GROQ AI integration with liberation-centered responses
+**Fallback**: Pattern-matching crisis support and wellness guidance when AI unavailable
 
 ## 💜 Crisis Support Resources (Currently Active)
 

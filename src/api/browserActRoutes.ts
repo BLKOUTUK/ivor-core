@@ -1,17 +1,21 @@
 import express from 'express'
 import Groq from 'groq-sdk'
-import { google } from 'googleapis'
+import { createClient } from '@supabase/supabase-js'
 
 const router = express.Router()
 
 const BROWSERACT_SECRET = process.env.BROWSERACT_SECRET_TOKEN || ''
-const GOOGLE_SHEET_ID = process.env.GOOGLE_SHEET_ID || ''
-const GOOGLE_SERVICE_ACCOUNT_JSON = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || ''
 
 // Initialize Groq client
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || ''
 })
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+)
 
 interface BrowserActEvent {
   type: 'event' | 'news'
@@ -87,8 +91,8 @@ router.post('/webhook', async (req, res) => {
             flags: moderationResult.flags?.join(', ') || ''
           }
 
-          // Write to Google Sheets
-          await writeToGoogleSheets(enrichedEvent, moderationStatus)
+          // Write to Supabase
+          await writeToSupabase(enrichedEvent, moderationStatus)
 
           return {
             success: true,
@@ -102,7 +106,7 @@ router.post('/webhook', async (req, res) => {
           console.error(`[BrowserAct] Error processing event: ${eventData.title}`, error)
 
           // On error, send to manual review
-          await writeToGoogleSheets({
+          await writeToSupabase({
             ...eventData,
             moderation_status: 'review-deep',
             ivor_confidence: '0%',
@@ -270,67 +274,56 @@ RESPOND ONLY WITH THIS JSON FORMAT (no other text):
 }
 
 /**
- * Write event to Google Sheets using Service Account authentication
+ * Write event to Supabase database
  */
-async function writeToGoogleSheets(eventData: any, status: string): Promise<void> {
-  if (!GOOGLE_SHEET_ID || !GOOGLE_SERVICE_ACCOUNT_JSON) {
-    console.warn('[Google Sheets] Not configured - skipping write')
-    return
-  }
-
+async function writeToSupabase(eventData: any, status: string): Promise<void> {
   try {
-    // Parse service account credentials
-    const credentials = JSON.parse(GOOGLE_SERVICE_ACCOUNT_JSON)
+    // Parse confidence and scores (remove % sign if present)
+    const parsePercentage = (val: string): number | null => {
+      if (!val) return null
+      const num = parseFloat(val.replace('%', ''))
+      return isNaN(num) ? null : num
+    }
 
-    // Create auth client with Service Account
-    const auth = new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    })
+    // Prepare event data for database
+    const dbEvent = {
+      submitted_at: eventData.submitted_at || new Date().toISOString(),
+      submitted_by: eventData.submitted_by || 'browseract-automation',
+      content_type: 'events',
+      title: eventData.title || '',
+      description: eventData.description || null,
+      event_date: eventData.event_date || null,
+      event_time: eventData.event_time || null,
+      location: eventData.location || null,
+      organizer_name: eventData.organizer_name || null,
+      source_url: eventData.source_url || null,
+      tags: eventData.tags || [],
+      price: eventData.price || null,
+      image_url: eventData.image_url || null,
+      ivor_confidence: parsePercentage(eventData.ivor_confidence),
+      ivor_reasoning: eventData.ivor_reasoning || null,
+      liberation_score: parsePercentage(eventData.liberation_score),
+      moderation_status: status,
+      relevance: eventData.relevance || null,
+      quality: eventData.quality || null,
+      flags: eventData.flags ? (typeof eventData.flags === 'string' ? eventData.flags.split(', ') : eventData.flags) : [],
+      approval_status: status === 'auto-approved' ? 'approved' : 'pending_review'
+    }
 
-    const authClient = await auth.getClient()
-    const sheets = google.sheets({ version: 'v4', auth: authClient as any })
+    const { data, error } = await supabase
+      .from('browseract_events')
+      .insert(dbEvent)
+      .select()
+      .single()
 
-    const sheetName = status === 'auto-approved' ? 'Events_Published' : 'Events_PendingReview'
+    if (error) {
+      throw error
+    }
 
-    const row = [
-      eventData.submitted_at || new Date().toISOString(),
-      eventData.submitted_by || 'browseract-automation',
-      'events',
-      eventData.title || '',
-      eventData.event_date || '',
-      eventData.event_time || '',
-      eventData.location || '',
-      eventData.organizer_name || '',
-      eventData.description || '',
-      eventData.source_url || '',
-      eventData.tags?.join(', ') || '',
-      eventData.price || '',
-      eventData.image_url || '',
-      eventData.ivor_confidence || '',
-      eventData.ivor_reasoning || '',
-      eventData.liberation_score || '',
-      eventData.moderation_status || status,
-      eventData.relevance || '',
-      eventData.quality || '',
-      eventData.flags || '',
-      'pending_review',
-      ''
-    ]
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: GOOGLE_SHEET_ID,
-      range: `${sheetName}!A:V`,
-      valueInputOption: 'RAW',
-      requestBody: {
-        values: [row]
-      }
-    })
-
-    console.log(`[Google Sheets] Written to ${sheetName}: ${eventData.title}`)
+    console.log(`[Supabase] Event saved (${status}): ${eventData.title} [ID: ${data.id}]`)
 
   } catch (error) {
-    console.error('[Google Sheets] Write failed:', error)
+    console.error('[Supabase] Write failed:', error)
     // Don't throw - we don't want to fail the entire request
   }
 }
