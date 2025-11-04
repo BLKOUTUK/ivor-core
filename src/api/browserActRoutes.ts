@@ -11,10 +11,16 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || ''
 })
 
-// Initialize Supabase client
+// Initialize Supabase client with service_role key
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
 )
 
 interface BrowserActEvent {
@@ -324,9 +330,10 @@ async function writeToSupabase(eventData: any, status: string): Promise<void> {
     console.log(`[Supabase] Event saved (${status}): ${eventData.title} [ID: ${data.id}]`)
 
   } catch (error) {
-    console.error('[Supabase] Write failed:', error)
-    // Re-throw so webhook response indicates database failure
-    throw new Error(`Database write failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    console.error('[Supabase] Write failed:', JSON.stringify(error, null, 2))
+    // Re-throw with detailed error info
+    const errorMsg = error instanceof Error ? error.message : (error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unknown error')
+    throw new Error(`Database write failed: ${errorMsg}`)
   }
 }
 
