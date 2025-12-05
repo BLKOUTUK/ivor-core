@@ -4,7 +4,7 @@
   "version": "1.0.0",
 
   "webhook": {
-    "url": "https://ivor-core-production.up.railway.app/api/browseract/webhook",
+    "url": "https://ivor.blkoutuk.cloud/api/browseract/webhook",
     "method": "POST",
     "headers": {
       "Content-Type": "application/json",
