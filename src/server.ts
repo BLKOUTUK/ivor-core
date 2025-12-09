@@ -32,8 +32,16 @@ const journeyConversationService = new JourneyAwareConversationService(baseConve
 // Middleware
 app.use(helmet())
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://ivor-core.vercel.app', 'https://blkout.uk'] 
+  origin: process.env.NODE_ENV === 'production'
+    ? [
+        'https://ivor.blkoutuk.cloud',
+        'https://blkoutuk.com',
+        'https://www.blkoutuk.com',
+        'https://news.blkoutuk.cloud',
+        'https://events.blkoutuk.cloud',
+        'https://comms.blkoutuk.cloud',
+        'https://movement.blkoutuk.cloud'
+      ]
     : ['http://localhost:5181', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true
 }))
