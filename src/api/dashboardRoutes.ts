@@ -12,6 +12,7 @@
 
 import express from 'express';
 import axios from 'axios';
+import { WeeklyContentReviewService } from '../services/WeeklyContentReviewService.js';
 
 const router = express.Router();
 
@@ -355,6 +356,174 @@ router.get('/health', async (req, res) => {
       communityProtection: 'prioritized'
     }
   });
+});
+
+// Weekly review service instance (lazy initialized)
+let weeklyReviewService: WeeklyContentReviewService | null = null;
+let lastReviewResult: {
+  timestamp: string;
+  result: any;
+} | null = null;
+
+/**
+ * POST /api/dashboard/weekly-review
+ * Trigger weekly content review (for curators/admins)
+ */
+router.post('/weekly-review', async (req, res) => {
+  try {
+    // Initialize service if needed
+    if (!weeklyReviewService) {
+      weeklyReviewService = new WeeklyContentReviewService();
+    }
+
+    console.log('🏴‍☠️ [Dashboard] Triggering weekly content review...');
+
+    const result = await weeklyReviewService.performWeeklyReview();
+
+    // Store result for status endpoint
+    lastReviewResult = {
+      timestamp: new Date().toISOString(),
+      result
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'Weekly review completed',
+      review: result,
+      completedAt: lastReviewResult.timestamp
+    });
+
+  } catch (error: any) {
+    console.error('[Dashboard] Weekly review error:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Weekly review failed',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/dashboard/weekly-review/status
+ * Get status of last weekly review
+ */
+router.get('/weekly-review/status', async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    lastReview: lastReviewResult || {
+      message: 'No review has been run yet this session'
+    },
+    serviceStatus: weeklyReviewService ? 'initialized' : 'not-initialized'
+  });
+});
+
+/**
+ * GET /api/dashboard/content-summary
+ * Get summary of content from last 7 days with liberation analysis
+ */
+router.get('/content-summary', async (req, res) => {
+  try {
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      return res.status(200).json({
+        success: true,
+        message: 'Demo mode - Supabase not configured',
+        summary: { events: [], news: [], period: '7 days' }
+      });
+    }
+
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekAgoStr = weekAgo.toISOString();
+
+    // Fetch recent events
+    const eventsResponse = await axios.get(
+      `${SUPABASE_URL}/rest/v1/events`,
+      {
+        params: {
+          created_at: `gte.${weekAgoStr}`,
+          select: 'id,title,date,status,liberation_score,source,created_at',
+          order: 'created_at.desc',
+          limit: 100
+        },
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+
+    // Fetch recent news
+    const newsResponse = await axios.get(
+      `${SUPABASE_URL}/rest/v1/news_articles`,
+      {
+        params: {
+          created_at: `gte.${weekAgoStr}`,
+          select: 'id,title,category,status,liberation_score,author,created_at',
+          order: 'created_at.desc',
+          limit: 100
+        },
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+
+    const events = eventsResponse.data || [];
+    const news = newsResponse.data || [];
+
+    // Calculate summary stats
+    const eventStats = {
+      total: events.length,
+      approved: events.filter((e: any) => e.status === 'approved' || e.status === 'published').length,
+      pending: events.filter((e: any) => e.status === 'pending').length,
+      avgScore: events.length > 0
+        ? Math.round(events.reduce((sum: number, e: any) => sum + (e.liberation_score || 0), 0) / events.length)
+        : 0
+    };
+
+    const newsStats = {
+      total: news.length,
+      published: news.filter((n: any) => n.status === 'published').length,
+      pending: news.filter((n: any) => n.status === 'review').length,
+      avgScore: news.length > 0
+        ? Math.round(news.reduce((sum: number, n: any) => sum + (n.liberation_score || 0), 0) / news.length)
+        : 0
+    };
+
+    return res.status(200).json({
+      success: true,
+      period: {
+        start: weekAgoStr,
+        end: new Date().toISOString(),
+        days: 7
+      },
+      events: {
+        stats: eventStats,
+        recent: events.slice(0, 10)
+      },
+      news: {
+        stats: newsStats,
+        recent: news.slice(0, 10)
+      },
+      combined: {
+        totalContent: events.length + news.length,
+        totalApproved: eventStats.approved + newsStats.published,
+        totalPending: eventStats.pending + newsStats.pending,
+        overallAvgScore: (events.length + news.length) > 0
+          ? Math.round((eventStats.avgScore * events.length + newsStats.avgScore * news.length) / (events.length + news.length))
+          : 0
+      }
+    });
+
+  } catch (error: any) {
+    console.error('[Dashboard] Content summary error:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch content summary',
+      message: error.message
+    });
+  }
 });
 
 export default router;
