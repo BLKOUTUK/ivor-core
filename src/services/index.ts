@@ -16,7 +16,15 @@
  * - Cultural authenticity preserved
  */
 
-// Layer 3 Core Business Logic Services
+// Layer 3 Core Business Logic Services - Imports for internal use
+import CommunityBusinessLogicServiceImpl from './CommunityBusinessLogicService.js';
+import CreatorBusinessLogicServiceImpl from './CreatorBusinessLogicService.js';
+import ContentBusinessLogicServiceImpl from './ContentBusinessLogicService.js';
+import LiberationImpactBusinessLogicServiceImpl from './LiberationImpactBusinessLogicService.js';
+import Layer3InterfaceManagerImpl from './Layer3InterfaceManager.js';
+import IVORMicroservicesIntegrationImpl from './IVORMicroservicesIntegration.js';
+
+// Layer 3 Core Business Logic Services - Exports
 export { default as CommunityBusinessLogicService } from './CommunityBusinessLogicService.js';
 export { default as CreatorBusinessLogicService } from './CreatorBusinessLogicService.js';
 export { default as ContentBusinessLogicService } from './ContentBusinessLogicService.js';
@@ -31,6 +39,14 @@ export { default as IVORMicroservicesIntegration } from './IVORMicroservicesInte
 // Type Definitions (re-export for convenience)
 export * from '../types/layer3-business-logic.js';
 
+// Internal type aliases for use within this file
+type Layer3InterfaceManager = Layer3InterfaceManagerImpl;
+type IVORMicroservicesIntegration = IVORMicroservicesIntegrationImpl;
+type CommunityBusinessLogicService = CommunityBusinessLogicServiceImpl;
+type CreatorBusinessLogicService = CreatorBusinessLogicServiceImpl;
+type ContentBusinessLogicService = ContentBusinessLogicServiceImpl;
+type LiberationImpactBusinessLogicService = LiberationImpactBusinessLogicServiceImpl;
+
 // =====================================================================================
 // LAYER 3 SERVICE FACTORY - Liberation-Compliant Initialization
 // =====================================================================================
@@ -41,8 +57,8 @@ export * from '../types/layer3-business-logic.js';
  */
 export class Layer3ServiceFactory {
   private static instance: Layer3ServiceFactory;
-  private interfaceManager: Layer3InterfaceManager | null = null;
-  private microservicesIntegration: IVORMicroservicesIntegration | null = null;
+  private interfaceManager: Layer3InterfaceManagerImpl | null = null;
+  private microservicesIntegration: IVORMicroservicesIntegrationImpl | null = null;
 
   private constructor() {}
 
@@ -58,20 +74,20 @@ export class Layer3ServiceFactory {
    * with liberation values enforcement and IVOR integration
    */
   async initializeLayer3Ecosystem(): Promise<{
-    interfaceManager: Layer3InterfaceManager;
-    microservicesIntegration: IVORMicroservicesIntegration;
+    interfaceManager: Layer3InterfaceManagerImpl;
+    microservicesIntegration: IVORMicroservicesIntegrationImpl;
     healthStatus: {
       servicesInitialized: boolean;
       liberationCompliant: boolean;
       ivorIntegrated: boolean;
     };
   }> {
-    
+
     // Initialize Layer 3 Interface Manager
-    this.interfaceManager = new Layer3InterfaceManager();
-    
+    this.interfaceManager = new Layer3InterfaceManagerImpl();
+
     // Initialize IVOR Microservices Integration
-    this.microservicesIntegration = new IVORMicroservicesIntegration(this.interfaceManager);
+    this.microservicesIntegration = new IVORMicroservicesIntegrationImpl(this.interfaceManager);
 
     // Validate system health and liberation compliance
     const healthStatus = await this.validateSystemHealth();
@@ -86,7 +102,7 @@ export class Layer3ServiceFactory {
   /**
    * Get initialized Layer 3 Interface Manager
    */
-  getInterfaceManager(): Layer3InterfaceManager {
+  getInterfaceManager(): Layer3InterfaceManagerImpl {
     if (!this.interfaceManager) {
       throw new Error('Layer 3 ecosystem not initialized. Call initializeLayer3Ecosystem() first.');
     }
@@ -96,7 +112,7 @@ export class Layer3ServiceFactory {
   /**
    * Get initialized IVOR Microservices Integration
    */
-  getMicroservicesIntegration(): IVORMicroservicesIntegration {
+  getMicroservicesIntegration(): IVORMicroservicesIntegrationImpl {
     if (!this.microservicesIntegration) {
       throw new Error('Layer 3 ecosystem not initialized. Call initializeLayer3Ecosystem() first.');
     }
@@ -204,28 +220,28 @@ export class Layer3ServiceFactory {
  * Use this for simple, direct access to Layer 3 services
  */
 export const Layer3Services = {
-  async getCommunityService(): Promise<CommunityBusinessLogicService> {
-    return new CommunityBusinessLogicService();
+  async getCommunityService(): Promise<CommunityBusinessLogicServiceImpl> {
+    return new CommunityBusinessLogicServiceImpl();
   },
 
-  async getCreatorService(): Promise<CreatorBusinessLogicService> {
-    return new CreatorBusinessLogicService();
+  async getCreatorService(): Promise<CreatorBusinessLogicServiceImpl> {
+    return new CreatorBusinessLogicServiceImpl();
   },
 
-  async getContentService(): Promise<ContentBusinessLogicService> {
-    return new ContentBusinessLogicService();
+  async getContentService(): Promise<ContentBusinessLogicServiceImpl> {
+    return new ContentBusinessLogicServiceImpl();
   },
 
-  async getLiberationImpactService(): Promise<LiberationImpactBusinessLogicService> {
-    return new LiberationImpactBusinessLogicService();
+  async getLiberationImpactService(): Promise<LiberationImpactBusinessLogicServiceImpl> {
+    return new LiberationImpactBusinessLogicServiceImpl();
   },
 
-  async getInterfaceManager(): Promise<Layer3InterfaceManager> {
+  async getInterfaceManager(): Promise<Layer3InterfaceManagerImpl> {
     const factory = Layer3ServiceFactory.getInstance();
     return factory.getInterfaceManager();
   },
 
-  async getMicroservicesIntegration(): Promise<IVORMicroservicesIntegration> {
+  async getMicroservicesIntegration(): Promise<IVORMicroservicesIntegrationImpl> {
     const factory = Layer3ServiceFactory.getInstance();
     return factory.getMicroservicesIntegration();
   }
