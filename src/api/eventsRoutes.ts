@@ -111,7 +111,7 @@ router.post('/submit', async (req, res) => {
 
     console.log('🏴‍☠️ [Events] Liberation validation:', liberationCheck);
 
-    // Prepare event data
+    // Prepare event data with liberation score
     const eventData = {
       title: title || 'Untitled Event',
       date: date,
@@ -124,7 +124,8 @@ router.post('/submit', async (req, res) => {
       tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
       organizer: organizer || 'Community',
       source: source,
-      status: liberationCheck.recommendation === 'auto-approve' ? 'published' : 'pending',
+      status: liberationCheck.recommendation === 'auto-approve' ? 'approved' : 'pending',
+      liberation_score: Math.round(liberationCheck.liberationScore * 100), // Store as 0-100
       created_at: new Date().toISOString()
     };
 

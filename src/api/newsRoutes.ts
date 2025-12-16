@@ -114,7 +114,7 @@ router.post('/submit', async (req, res) => {
     const articleStatus = liberationCheck.recommendation === 'publish' ? 'published' : 'review';
     const isAutoPublished = liberationCheck.recommendation === 'publish';
 
-    // Prepare article data
+    // Prepare article data with liberation score
     const articleData = {
       title,
       source_url: url,
@@ -126,6 +126,7 @@ router.post('/submit', async (req, res) => {
       status: articleStatus,
       published: isAutoPublished,
       published_at: isAutoPublished ? new Date().toISOString() : null,
+      liberation_score: Math.round(liberationCheck.liberationScore * 100), // Store as 0-100
       created_at: new Date().toISOString()
     };
 
