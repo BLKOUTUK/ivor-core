@@ -12,6 +12,7 @@ import moderationRoutes from './api/moderationRoutes.js'
 import eventsWebhookRoutes from './api/eventsWebhookRoutes.js'
 import eventsRoutes from './api/eventsRoutes.js'
 import newsRoutes from './api/newsRoutes.js'
+import dashboardRoutes from './api/dashboardRoutes.js'
 
 // Layer 3 Liberation Business Logic
 import {
@@ -73,6 +74,7 @@ app.use('/api/events', eventsWebhookRoutes)
 // Liberation-integrated API routes (central gateway for frontends)
 app.use('/api/events', eventsRoutes)  // Events calendar API
 app.use('/api/news', newsRoutes)      // Newsroom API
+app.use('/api/dashboard', dashboardRoutes)  // Liberation dashboard API
 
 // Health check
 app.get('/health', (req, res) => {
