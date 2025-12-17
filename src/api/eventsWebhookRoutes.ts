@@ -15,10 +15,10 @@ const groq = new Groq({
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim()
 const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 
-console.log('[BrowserAct] 🔍 Supabase REST API config:', {
+console.log('[Events] 🔍 Supabase REST API config:', {
   url: SUPABASE_URL,
   keyLength: SUPABASE_KEY.length,
-  restEndpoint: `${SUPABASE_URL}/rest/v1/browseract_events`
+  restEndpoint: `${SUPABASE_URL}/rest/v1/community_events`
 })
 
 interface IncomingEvent {
@@ -36,7 +36,7 @@ interface IncomingEvent {
 
 /**
  * Events Webhook Endpoint
- * Receives scraped events (from BrowserAct or other sources) and sends them through IVOR moderation
+ * Receives scraped community events and sends them through IVOR moderation
  */
 router.post('/webhook', async (req, res) => {
   const startTime = Date.now()
@@ -91,7 +91,7 @@ router.post('/webhook', async (req, res) => {
             moderation_status: moderationStatus,
             relevance: moderationResult.relevance,
             quality: moderationResult.quality,
-            submitted_by: 'browseract-automation',
+            submitted_by: 'ivor-automation',
             submitted_at: new Date().toISOString(),
             flags: moderationResult.flags?.join(', ') || ''
           }
@@ -317,7 +317,7 @@ async function writeToSupabase(eventData: any, status: string): Promise<void> {
 
     // Use Supabase REST API directly
     const response = await axios.post(
-      `${SUPABASE_URL}/rest/v1/browseract_events`,
+      `${SUPABASE_URL}/rest/v1/community_events`,
       dbEvent,
       {
         headers: {

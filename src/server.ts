@@ -13,6 +13,14 @@ import eventsWebhookRoutes from './api/eventsWebhookRoutes.js'
 import eventsRoutes from './api/eventsRoutes.js'
 import newsRoutes from './api/newsRoutes.js'
 import dashboardRoutes from './api/dashboardRoutes.js'
+import notificationRoutes from './api/notificationRoutes.js'
+import discoverRoutes from './api/discoverRoutes.js'
+import rsvpRoutes from './api/rsvpRoutes.js'
+import calendarRoutes from './api/calendarRoutes.js'
+import organizerRoutes from './api/organizerRoutes.js'
+import eventModerationRoutes from './api/eventModerationRoutes.js'
+import groupsRoutes from './api/groupsRoutes.js'
+import analyticsRoutes from './api/analyticsRoutes.js'
 
 // Layer 3 Liberation Business Logic
 import {
@@ -75,6 +83,14 @@ app.use('/api/events', eventsWebhookRoutes)
 app.use('/api/events', eventsRoutes)  // Events calendar API
 app.use('/api/news', newsRoutes)      // Newsroom API
 app.use('/api/dashboard', dashboardRoutes)  // Liberation dashboard API
+app.use('/api/notifications', notificationRoutes)  // Push notifications API
+app.use('/api/discover', discoverRoutes)  // Smart discovery & recommendations API
+app.use('/api/rsvp', rsvpRoutes)          // RSVP & capacity management API
+app.use('/api/calendar', calendarRoutes)  // Calendar feeds & ICS generation API
+app.use('/api/organizer', organizerRoutes)  // Organizer dashboard & analytics API
+app.use('/api/event-moderation', eventModerationRoutes)  // Event moderation & reporting API
+app.use('/api/groups', groupsRoutes)      // Community groups API
+app.use('/api/analytics', analyticsRoutes)  // Analytics dashboard & metrics API
 
 // Health check
 app.get('/health', (req, res) => {
