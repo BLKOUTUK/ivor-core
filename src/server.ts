@@ -21,6 +21,10 @@ import organizerRoutes from './api/organizerRoutes.js'
 import eventModerationRoutes from './api/eventModerationRoutes.js'
 import groupsRoutes from './api/groupsRoutes.js'
 import analyticsRoutes from './api/analyticsRoutes.js'
+// Temporarily disabled - need Stripe credentials
+// import shopRoutes from './api/shopRoutes.js'
+// import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
+// import checkoutRoutes from './api/checkoutRoutes.js'
 
 // Layer 3 Liberation Business Logic
 import {
@@ -69,6 +73,11 @@ app.use(cors({
     : ['http://localhost:5181', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true
 }))
+
+// IMPORTANT: Stripe webhook MUST use raw body parsing BEFORE express.json()
+// Temporarily disabled - need Stripe credentials
+// app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRoutes)
+
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
@@ -91,6 +100,9 @@ app.use('/api/organizer', organizerRoutes)  // Organizer dashboard & analytics A
 app.use('/api/event-moderation', eventModerationRoutes)  // Event moderation & reporting API
 app.use('/api/groups', groupsRoutes)      // Community groups API
 app.use('/api/analytics', analyticsRoutes)  // Analytics dashboard & metrics API
+// Temporarily disabled - need Stripe credentials configured
+// app.use('/api/shop', shopRoutes)           // Shop & marketplace API
+// app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
 
 // Health check
 app.get('/health', (req, res) => {
