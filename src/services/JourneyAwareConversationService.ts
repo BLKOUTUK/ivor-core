@@ -53,17 +53,53 @@ export class JourneyAwareConversationService {
       // Extract topic for better resource matching
       const topic = this.extractTopicFromMessage(message)
 
-      // Generate contextual response
-      const baseResponse = this.responseGenerator.generateResponse(
-        message,
-        journeyContext,
+      // Get relevant UK resources for this topic/stage
+      const relevantResources = this.knowledgeBase.getResourcesForStage(
+        journeyContext.stage,
         topic
       )
 
-      // Calculate trust scores for knowledge and resources
+      // Generate AI response if available, otherwise use pattern-matching
+      let responseText: string
+      if (this.conversationService.isAIAvailable()) {
+        // Build conversation context for AI
+        const conversationContext = {
+          userId,
+          conversationHistory: userContext.conversationHistory || [],
+          userProfile: userContext,
+          emotionalState: journeyContext.emotionalState,
+          sessionId,
+          currentTopic: topic,
+          lastInteraction: new Date()
+        }
+
+        // Use GROQ AI with journey context
+        responseText = await this.conversationService.generateAIResponse(
+          message,
+          conversationContext,
+          relevantResources
+        )
+      } else {
+        // Fallback to pattern-matching
+        const baseResponse = this.responseGenerator.generateResponse(
+          message,
+          journeyContext,
+          topic
+        )
+        responseText = baseResponse.response
+      }
+
+      // Build journey response with trust scores
+      const baseResponse = {
+        response: responseText,
+        journeyContext,
+        resources: relevantResources.slice(0, 5),
+        nextStageGuidance: '',
+        followUpRequired: false,
+        resourcesProvided: relevantResources.map(r => r.title)
+      }
+
       const trustScores = await this.calculateTrustScores(baseResponse)
-      
-      // Create enhanced response with trust information
       const response = await this.enhanceResponseWithTrust(baseResponse, trustScores)
 
       // Store conversation context if AI is available
@@ -78,7 +114,7 @@ export class JourneyAwareConversationService {
 
     } catch (error) {
       console.error('Error generating journey-aware response:', error)
-      
+
       // Be honest about system limitations rather than providing generic responses
       console.log('🚨 System fallback triggered due to error - providing honest limitation response')
       return this.generateFallbackResponse(message, userContext)
