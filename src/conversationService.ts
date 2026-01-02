@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import Groq from 'groq-sdk'
 import { createClient } from '@supabase/supabase-js'
 import EmbeddingService from './embeddingService.js'
 
@@ -25,7 +25,7 @@ interface ConversationContext {
 
 // Enhanced Conversation Service with AI and Memory
 class ConversationService {
-  private openai: OpenAI | null = null
+  private groq: Groq | null = null
   private supabase: any
   private embeddingService: EmbeddingService
   private isAIEnabled: boolean = false
@@ -39,15 +39,15 @@ class ConversationService {
       this.supabase = createClient(supabaseUrl, supabaseKey)
       console.log('✅ ConversationService: Connected to Supabase')
     }
-    
+
     this.embeddingService = new EmbeddingService()
-    
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
-      this.openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
+
+    if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'your-groq-api-key-here') {
+      this.groq = new Groq({
+        apiKey: process.env.GROQ_API_KEY
       })
       this.isAIEnabled = true
-      console.log('🤖 ConversationService: AI integration enabled')
+      console.log('🤖 ConversationService: GROQ AI integration enabled')
     } else {
       console.log('⚠️ ConversationService: AI disabled, using rule-based responses')
     }
@@ -57,18 +57,18 @@ class ConversationService {
    * Generate AI-powered response with context
    */
   async generateAIResponse(
-    message: string, 
+    message: string,
     context: ConversationContext,
     relevantResources: any[]
   ): Promise<string> {
-    if (!this.isAIEnabled || !this.openai) {
+    if (!this.isAIEnabled || !this.groq) {
       return this.generateFallbackResponse(message, relevantResources)
     }
 
     try {
       const systemPrompt = this.createSystemPrompt(context, relevantResources)
       const conversationHistory = context.conversationHistory.slice(-8) // Last 8 messages
-      
+
       const messages = [
         { role: 'system' as const, content: systemPrompt },
         ...conversationHistory.map(msg => ({
@@ -78,18 +78,16 @@ class ConversationService {
         { role: 'user' as const, content: message }
       ]
 
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4',
+      const response = await this.groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',  // GROQ's latest model
         messages: messages,
         max_tokens: 800,
-        temperature: 0.7,
-        presence_penalty: 0.1,
-        frequency_penalty: 0.1
+        temperature: 0.7
       })
 
       return response.choices[0]?.message?.content || this.generateFallbackResponse(message, relevantResources)
     } catch (error) {
-      console.error('Error generating AI response:', error)
+      console.error('Error generating GROQ AI response:', error)
       return this.generateFallbackResponse(message, relevantResources)
     }
   }
