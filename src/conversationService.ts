@@ -147,19 +147,33 @@ Remember: You're not just providing information - you're building community, sup
   /**
    * Fallback response when AI is unavailable
    */
+  private fallbackMessageIndex = 0;
+
   private generateFallbackResponse(message: string, resources: any[]): string {
-    const resourceText = resources.length > 0 
-      ? `\n\n✨ **Here are some amazing resources I found for you:**\n${resources.slice(0, 3).map(r => 
+    const resourceText = resources.length > 0
+      ? `\n\n✨ **Here are some resources for you:**\n${resources.slice(0, 3).map(r =>
           `🌟 **${r.title}**: ${r.description}\n  ${r.website_url ? `🌐 ${r.website_url}` : ''}${r.phone ? ` | 📞 ${r.phone}` : ''}`
         ).join('\n')}`
       : ''
 
-    return `Hey there! 🎉 I'm IVOR, and I'm absolutely here to support you with resources and guidance for Black queer liberation and wellbeing. You've come to the right place! ${resourceText}
+    // Cycle through varied responses so it doesn't feel repetitive
+    const fallbackMessages = [
+      `Community and belonging are so essential! You're part of the BLKOUT community - a space created by and for Black queer folks to thrive together.\n\nWhile I'm here for personal support, I can help you think through:\n• Building authentic relationships\n• Finding your community spaces\n• Navigating identity and belonging\n• Connecting with resources and networks\n\nWhat aspect of community or connection feels most important to you right now? 🌈${resourceText}`,
 
-💜 **What specific support are you looking for today?** I'm excited to help connect you with:
-🧠 Mental health resources | 🏠 Housing support | 🌈 Community events | ⚖️ Legal guidance | 🚀 Career development | 💕 Relationship support
+      `Hey there! I'm IVOR, supporting Black queer liberation and wellbeing. Whether you're looking for resources, community connection, or just thinking things through - I'm here.\n\nI can help with:\n• Crisis support and wellness resources\n• Finding community events and spaces\n• Organizing and activism guidance\n• Personal growth and healing\n• Practical support (housing, legal, career)\n\nWhat brings you here today?${resourceText}`,
 
-**You've got this, and we've got you!** What feels most important to explore right now?`
+      `Welcome! BLKOUT is community-owned tech for Black queer folks - built by us, for us.\n\nI'm here to support you with:\n• Mental health and crisis resources (UK-specific)\n• Community organizing and solidarity\n• Finding events, groups, and connection\n• Navigating systems and accessing support\n\nWhat do you need help with?${resourceText}`,
+
+      `You've found IVOR - your community AI assistant. I'm here for support, resources, and thinking through whatever's on your mind.\n\nCommon things I help with:\n• Immediate crisis support and wellness\n• Community organizing and campaigns\n• Finding Black queer spaces and events\n• Personal development and learning\n• Navigating relationships and identity\n\nHow can I support you today?${resourceText}`,
+
+      `I'm IVOR, supporting Black queer liberation through community-owned technology. Whether you're in crisis, organizing, or just exploring - you're in the right place.\n\nI can connect you with:\n• UK crisis hotlines and mental health support\n• Community events and organizing opportunities\n• Resources for housing, legal, employment\n• Personal growth and healing pathways\n\nWhat feels most urgent or important right now?${resourceText}`
+    ];
+
+    // Cycle through messages
+    const response = fallbackMessages[this.fallbackMessageIndex % fallbackMessages.length];
+    this.fallbackMessageIndex++;
+
+    return response;
   }
 
   /**
