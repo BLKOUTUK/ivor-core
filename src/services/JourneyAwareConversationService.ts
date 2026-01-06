@@ -54,8 +54,11 @@ export class JourneyAwareConversationService {
       const topic = this.extractTopicFromMessage(message)
 
       // Get relevant UK resources for this topic/stage
-      const relevantResources = this.knowledgeBase.getResourcesForStage(
+      const location = userContext.location || 'unknown'
+      const relevantResources = this.knowledgeBase.getResourcesByStageAndLocation(
         journeyContext.stage,
+        location,
+        journeyContext.emotionalState === 'overwhelmed' ? 'emergency' : undefined,
         topic
       )
 
@@ -94,6 +97,7 @@ export class JourneyAwareConversationService {
         response: responseText,
         journeyContext,
         resources: relevantResources.slice(0, 5),
+        knowledge: [],
         nextStageGuidance: '',
         followUpRequired: false,
         resourcesProvided: relevantResources.map(r => r.title)

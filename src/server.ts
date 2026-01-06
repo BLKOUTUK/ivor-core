@@ -621,18 +621,14 @@ async function generateJourneyAwareResponse(message: string, context?: any, sess
       }
       
       const journeyResponse = await journeyConversationService.generateJourneyAwareResponse(message, conversationContext)
-      
+
       // Convert JourneyResponse to expected format
       return {
-        response: journeyResponse.message,
-        journeyContext: {
-          stage: journeyResponse.journeyStage,
-          trustScore: journeyResponse.trustScore,
-          trustLevel: journeyResponse.trustLevel
-        },
-        nextStageGuidance: journeyResponse.nextStagePathway,
+        response: journeyResponse.response,
+        journeyContext: journeyResponse.journeyContext,
+        nextStageGuidance: journeyResponse.nextStageGuidance,
         followUpRequired: journeyResponse.followUpRequired,
-        resourcesProvided: journeyResponse.resources.map(r => r.title)
+        resourcesProvided: journeyResponse.resourcesProvided
       }
     } else {
       return {
