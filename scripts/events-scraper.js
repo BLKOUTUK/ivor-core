@@ -10,8 +10,8 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 
 // Configuration
-const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://localhost:8080/api/browseract/webhook';
-const BROWSERACT_TOKEN = process.env.BROWSERACT_TOKEN;
+const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://localhost:8080/api/events/webhook';
+const WEBHOOK_TOKEN = process.env.WEBHOOK_SECRET_TOKEN;
 const EVENTBRITE_TOKEN = process.env.EVENTBRITE_API_TOKEN;
 const OUTSAVVY_API_KEY = process.env.OUTSAVVY_API_KEY || 'ZR8JUA8ILRSSVWUNFIT3';
 
@@ -88,7 +88,7 @@ async function sendToWebhook(events) {
         {
           headers: {
             'Content-Type': 'application/json',
-            'X-BrowserAct-Token': BROWSERACT_TOKEN
+            'X-Webhook-Token': WEBHOOK_TOKEN
           },
           timeout: 30000
         }

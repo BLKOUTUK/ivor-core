@@ -121,19 +121,29 @@ export class WeeklyContentReviewService {
 
   /**
    * Get new events from past week
+   * Queries the main 'events' table used by the events calendar and social diary
    */
   private async getNewEvents(since: Date): Promise<any[]> {
     try {
-      // Assuming events are stored in a separate table
+      // Query the main events table (shared with events-calendar and comms-blkout)
       const { data, error } = await this.supabase
-        .from('community_events')
-        .select('*')
+        .from('events')
+        .select('id, title, description, date, start_time, location, organizer, url, cost, tags, source, relevance_score, created_at')
         .gte('created_at', since.toISOString())
         .eq('status', 'approved')
-        .order('created_at', { ascending: false })
+        .is('archived', false)
+        .order('date', { ascending: true })
 
       if (error) throw error
-      return data || []
+
+      // Map to expected format for knowledge extraction
+      return (data || []).map(event => ({
+        ...event,
+        event_date: event.date,
+        event_time: event.start_time,
+        organizer_name: event.organizer,
+        source_url: event.url
+      }))
     } catch (error) {
       console.error('Error fetching new events:', error)
       return []

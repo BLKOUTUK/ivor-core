@@ -21,6 +21,7 @@ import organizerRoutes from './api/organizerRoutes.js'
 import eventModerationRoutes from './api/eventModerationRoutes.js'
 import groupsRoutes from './api/groupsRoutes.js'
 import analyticsRoutes from './api/analyticsRoutes.js'
+import learningRoutes from './api/learning.js'
 // Temporarily disabled - need Stripe credentials
 // import shopRoutes from './api/shopRoutes.js'
 // import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
@@ -98,6 +99,7 @@ app.use('/api/rsvp', rsvpRoutes)          // RSVP & capacity management API
 app.use('/api/calendar', calendarRoutes)  // Calendar feeds & ICS generation API
 app.use('/api/organizer', organizerRoutes)  // Organizer dashboard & analytics API
 app.use('/api/event-moderation', eventModerationRoutes)  // Event moderation & reporting API
+app.use('/api/learning', learningRoutes)  // Learning platform & IVOR education API
 app.use('/api/groups', groupsRoutes)      // Community groups API
 app.use('/api/analytics', analyticsRoutes)  // Analytics dashboard & metrics API
 // Temporarily disabled - need Stripe credentials configured

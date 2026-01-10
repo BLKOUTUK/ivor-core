@@ -4,11 +4,11 @@
   "version": "1.0.0",
 
   "webhook": {
-    "url": "https://ivor.blkoutuk.cloud/api/browseract/webhook",
+    "url": "https://ivor.blkoutuk.cloud/api/events/webhook",
     "method": "POST",
     "headers": {
       "Content-Type": "application/json",
-      "X-BrowserAct-Token": "DI9qU+3JW9jmlV0e5ti+accAZDRYzthYz9WYsldlExc="
+      "X-Webhook-Token": "DI9qU+3JW9jmlV0e5ti+accAZDRYzthYz9WYsldlExc="
     }
   },
 
