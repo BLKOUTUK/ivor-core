@@ -6,10 +6,11 @@
  */
 
 import { Router } from 'express'
+import { getSupabaseClient } from '../lib/supabaseClient.js'
 
 const router = Router()
 
-// In-memory stores for demo mode
+// In-memory stores for demo mode (fallback if Supabase unavailable)
 const reports = new Map<string, any>()
 const moderationLog = new Map<string, any[]>()
 const flaggedEvents = new Set<string>()
@@ -271,49 +272,71 @@ router.get('/flagged', async (req, res) => {
  */
 router.get('/dashboard', async (req, res) => {
   try {
-    const allReports = Array.from(reports.values())
-    const allActions = Array.from(moderationLog.values()).flat()
+    const supabase = getSupabaseClient()
 
-    const stats = {
-      pendingReports: allReports.filter(r => r.status === 'pending').length,
-      flaggedEvents: flaggedEvents.size,
-      actionsToday: allActions.filter(a => {
-        const actionDate = new Date(a.created_at)
-        const today = new Date()
-        return actionDate.toDateString() === today.toDateString()
-      }).length,
-      reportsThisWeek: allReports.filter(r => {
-        const reportDate = new Date(r.created_at)
-        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-        return reportDate > weekAgo
-      }).length
+    if (!supabase) {
+      // Fallback to in-memory demo data if Supabase unavailable
+      const allReports = Array.from(reports.values())
+      const allActions = Array.from(moderationLog.values()).flat()
+
+      const stats = {
+        pendingReports: allReports.filter(r => r.status === 'pending').length,
+        flaggedEvents: flaggedEvents.size,
+        actionsToday: 0,
+        reportsThisWeek: allReports.length
+      }
+
+      return res.json({
+        success: true,
+        dashboard: {
+          stats,
+          recentActivity: [],
+          reasonsBreakdown: {},
+          quickActions: [
+            { id: 'review', label: 'Review Reports', count: stats.pendingReports },
+            { id: 'flagged', label: 'Flagged Events', count: stats.flaggedEvents }
+          ]
+        }
+      })
     }
 
-    const recentActivity = allActions
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10)
-      .map(a => ({
-        type: 'action',
-        action: a.action,
-        eventId: a.event_id,
-        moderator: a.moderator_name,
-        time: a.created_at
-      }))
+    // Query real Supabase events table
+    const { data: pendingEvents, error: pendingError } = await supabase
+      .from('events')
+      .select('id, title, status')
+      .eq('status', 'pending')
 
-    const reasonsBreakdown = allReports.reduce((acc: Record<string, number>, report) => {
-      acc[report.reason] = (acc[report.reason] || 0) + 1
-      return acc
-    }, {})
+    const { data: approvedEvents, error: approvedError } = await supabase
+      .from('events')
+      .select('id')
+      .eq('status', 'approved')
+
+    if (pendingError) {
+      console.error('[Event Moderation] Pending events error:', pendingError)
+    }
+
+    if (approvedError) {
+      console.error('[Event Moderation] Approved events error:', approvedError)
+    }
+
+    const stats = {
+      pendingReports: pendingEvents?.length || 0,
+      flaggedEvents: 0, // TODO: Add flagged status tracking
+      actionsToday: 0, // TODO: Track approval actions
+      reportsThisWeek: 0 // TODO: Track reports
+    }
 
     res.json({
       success: true,
       dashboard: {
         stats,
-        recentActivity,
-        reasonsBreakdown,
+        pendingEvents: pendingEvents || [],
+        approvedCount: approvedEvents?.length || 0,
+        recentActivity: [],
+        reasonsBreakdown: {},
         quickActions: [
-          { id: 'review', label: 'Review Reports', count: stats.pendingReports },
-          { id: 'flagged', label: 'Flagged Events', count: stats.flaggedEvents }
+          { id: 'review', label: 'Pending Events', count: stats.pendingReports },
+          { id: 'approved', label: 'Approved Events', count: approvedEvents?.length || 0 }
         ]
       }
     })
