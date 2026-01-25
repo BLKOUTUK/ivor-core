@@ -22,6 +22,7 @@ import eventModerationRoutes from './api/eventModerationRoutes.js'
 import groupsRoutes from './api/groupsRoutes.js'
 import analyticsRoutes from './api/analyticsRoutes.js'
 import learningRoutes from './api/learning.js'
+import voiceRoutes from './api/voiceRoutes.js'
 // Temporarily disabled - need Stripe credentials
 // import shopRoutes from './api/shopRoutes.js'
 // import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
@@ -102,6 +103,7 @@ app.use('/api/event-moderation', eventModerationRoutes)  // Event moderation & r
 app.use('/api/learning', learningRoutes)  // Learning platform & IVOR education API
 app.use('/api/groups', groupsRoutes)      // Community groups API
 app.use('/api/analytics', analyticsRoutes)  // Analytics dashboard & metrics API
+app.use('/api/voice', voiceRoutes)          // Voice synthesis (MeloTTS) API
 // Temporarily disabled - need Stripe credentials configured
 // app.use('/api/shop', shopRoutes)           // Shop & marketplace API
 // app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
