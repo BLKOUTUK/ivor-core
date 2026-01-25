@@ -102,14 +102,30 @@ router.post('/', async (req, res) => {
     // Call Mozilla TTS API
     console.log(`[Voice] Calling Mozilla TTS at ${MELOTTS_URL}`);
 
-    // Mozilla TTS uses GET with query parameter
-    const ttsUrl = `${MELOTTS_URL}/api/tts?text=${encodeURIComponent(text)}`;
-    const ttsResponse = await fetch(ttsUrl, {
-      method: 'GET'
-    });
+    // Try multiple endpoint formats for compatibility
+    let ttsResponse: Response | null = null;
+    const endpoints = [
+      { url: `${MELOTTS_URL}/api/tts?text=${encodeURIComponent(text)}`, method: 'GET' },
+      { url: `${MELOTTS_URL}/?text=${encodeURIComponent(text)}`, method: 'GET' },
+      { url: `${MELOTTS_URL}/synthesize?text=${encodeURIComponent(text)}`, method: 'GET' },
+    ];
 
-    if (!ttsResponse.ok) {
-      throw new Error(`Mozilla TTS API error: ${ttsResponse.status} ${ttsResponse.statusText}`);
+    for (const endpoint of endpoints) {
+      try {
+        console.log(`[Voice] Trying ${endpoint.method} ${endpoint.url}`);
+        const response = await fetch(endpoint.url, { method: endpoint.method });
+        if (response.ok) {
+          ttsResponse = response;
+          console.log(`[Voice] Success with ${endpoint.url}`);
+          break;
+        }
+      } catch (e) {
+        console.log(`[Voice] Failed ${endpoint.url}: ${e}`);
+      }
+    }
+
+    if (!ttsResponse || !ttsResponse.ok) {
+      throw new Error(`Mozilla TTS API error: No working endpoint found`);
     }
 
     // Alias for compatibility with rest of code
