@@ -14,31 +14,32 @@ export class ContextualResponseGenerator {
 
   /**
    * Generate journey-aware response with specific resources and information
+   * Note: Returns object with 'response' key to match runtime contract expected by JourneyAwareConversationService,
+   * even though JourneyResponse type uses 'message'. This should be unified in types.
    */
   generateResponse(
     userInput: string,
     journeyContext: JourneyContext,
     topic?: string
-  ): JourneyResponse {
+  ): any {
     // Get relevant resources and knowledge
     const resources = this.getRelevantResources(journeyContext, topic)
     const knowledge = this.getRelevantKnowledge(userInput, journeyContext, topic)
-    
+
     // Generate stage-appropriate message
-    const message = this.generateContextualMessage(userInput, journeyContext, resources, knowledge)
-    
+    const responseText = this.generateContextualMessage(userInput, journeyContext, resources, knowledge)
+
     // Generate next stage pathway guidance
-    const nextStagePathway = this.generateNextStageGuidance(journeyContext)
+    const nextStageGuidance = this.generateNextStageGuidance(journeyContext)
 
     return {
-      message,
-      journeyStage: journeyContext.stage,
-      nextStagePathway,
+      response: responseText,
+      journeyContext: journeyContext,
+      nextStageGuidance,
       resources: resources.slice(0, 5), // Limit to top 5 most relevant
       knowledge: knowledge.slice(0, 3), // Limit to top 3 most relevant
       followUpRequired: this.requiresFollowUp(journeyContext),
-      culturallyAffirming: true,
-      specificInformation: resources.length > 0 || knowledge.length > 0,
+      resourcesProvided: resources.slice(0, 5).map(r => r.title),
       // Default trust scoring values - will be overridden by JourneyAwareConversationService
       trustScore: 0.5,
       trustLevel: 'medium',

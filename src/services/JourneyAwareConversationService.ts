@@ -340,10 +340,12 @@ export class JourneyAwareConversationService {
 
   /**
    * Generate honest fallback response when journey system fails
+   * Note: Uses 'response' key to match the runtime contract expected by server.ts,
+   * even though JourneyResponse type uses 'message'. This should be unified in types.
    */
-  private generateFallbackResponse(message: string, userContext: any): JourneyResponse {
+  private generateFallbackResponse(message: string, userContext: any): any {
     return {
-      message: `💜 I want to be honest with you - I'm experiencing technical difficulties and cannot currently provide the personalized, journey-aware support I'm designed to offer.
+      response: `💜 I want to be honest with you - I'm experiencing technical difficulties and cannot currently provide the personalized, journey-aware support I'm designed to offer.
 
 🚨 **If this is an emergency**: Please call 999 or go to your nearest A&E immediately
 📞 **Crisis support**: Samaritans 116 123 (free, 24/7, confidential)
@@ -356,18 +358,26 @@ Rather than give you generic information that might not match your specific situ
 • **Local LGBTQ+ organizations** in your area
 
 I don't want to pretend I can help when my systems aren't working properly. Please reach out to the appropriate services above, and I hope to serve you better when my technical issues are resolved.`,
-      journeyStage: 'growth',
-      nextStagePathway: 'Please seek direct support from the resources above while I work to resolve technical issues.',
+      journeyContext: {
+        stage: 'growth',
+        emotionalState: 'uncertain',
+        urgencyLevel: 'low',
+        location: 'unknown',
+        communityConnection: 'exploring',
+        firstTime: false,
+        returningUser: true,
+        resourceAccessPreference: 'flexible'
+      },
+      nextStageGuidance: 'Please seek direct support from the resources above while I work to resolve technical issues.',
       resources: [],
       knowledge: [],
       followUpRequired: true,
-      culturallyAffirming: true,
-      specificInformation: false,
-      trustScore: 0.0, // Low trust when in fallback mode
+      resourcesProvided: [],
+      trustScore: 0.0,
       trustLevel: 'very_low',
       trustDescription: 'System experiencing technical difficulties - seek direct support',
       sourceVerification: { verified: 0, unverified: 0, total: 0 },
-      requestFeedback: false, // Don't request feedback when system is broken
+      requestFeedback: false,
       responseId: randomUUID()
     }
   }
