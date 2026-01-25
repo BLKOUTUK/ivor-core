@@ -215,7 +215,7 @@ router.get('/upcoming', async (req, res) => {
       `${SUPABASE_URL}/rest/v1/events`,
       {
         params: {
-          status: 'eq.published',
+          status: 'eq.approved',  // Database constraint allows: pending, approved
           date: `gte.${today}`,
           order: 'date.asc',
           limit: 50
@@ -305,7 +305,7 @@ router.post('/:id/approve', async (req, res) => {
 
     await axios.patch(
       `${SUPABASE_URL}/rest/v1/events`,
-      { status: 'published' },
+      { status: 'approved' },  // Database constraint allows: pending, approved
       {
         params: { id: `eq.${id}` },
         headers: {
