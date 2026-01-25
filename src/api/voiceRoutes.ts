@@ -99,25 +99,21 @@ router.post('/', async (req, res) => {
       console.warn('[Voice] Supabase not configured, skipping cache check');
     }
 
-    // Call MeloTTS API
-    console.log(`[Voice] Calling MeloTTS at ${MELOTTS_URL}`);
+    // Call Mozilla TTS API
+    console.log(`[Voice] Calling Mozilla TTS at ${MELOTTS_URL}`);
 
-    const melottsResponse = await fetch(`${MELOTTS_URL}/synthesize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text: text,
-        accent: 'EN-BR', // British English
-        speed: 1.0,
-        language: 'EN'
-      })
+    // Mozilla TTS uses GET with query parameter
+    const ttsUrl = `${MELOTTS_URL}/api/tts?text=${encodeURIComponent(text)}`;
+    const ttsResponse = await fetch(ttsUrl, {
+      method: 'GET'
     });
 
-    if (!melottsResponse.ok) {
-      throw new Error(`MeloTTS API error: ${melottsResponse.status} ${melottsResponse.statusText}`);
+    if (!ttsResponse.ok) {
+      throw new Error(`Mozilla TTS API error: ${ttsResponse.status} ${ttsResponse.statusText}`);
     }
+
+    // Alias for compatibility with rest of code
+    const melottsResponse = ttsResponse;
 
     // Get audio buffer
     const audioBuffer = await melottsResponse.arrayBuffer();
@@ -195,28 +191,29 @@ router.post('/', async (req, res) => {
  * GET /api/voice/health
  * Health check for voice service
  */
-router.get('/health', async (req, res) => {
+router.get('/health', async (_req, res) => {
   try {
-    // Check MeloTTS availability
-    const melottsCheck = await fetch(`${MELOTTS_URL}/health`, {
+    // Check Mozilla TTS availability (test with short text)
+    const ttsCheck = await fetch(`${MELOTTS_URL}/api/tts?text=test`, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000)
+      signal: AbortSignal.timeout(10000)
     }).catch(() => null);
 
-    const melottsHealthy = melottsCheck?.ok || false;
+    const ttsHealthy = ttsCheck?.ok || false;
 
     return res.status(200).json({
       success: true,
       service: 'ivor-voice',
-      melotts: {
+      tts: {
+        engine: 'Mozilla TTS',
         url: MELOTTS_URL,
-        healthy: melottsHealthy
+        healthy: ttsHealthy
       },
       supabase: {
         configured: !!(SUPABASE_URL && SUPABASE_SERVICE_KEY)
       },
       features: {
-        accent: 'British English (EN-BR)',
+        accent: 'English',
         caching: 'Supabase Storage (7-day retention)',
         cost: '$0/month (self-hosted)'
       },
