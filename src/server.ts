@@ -23,10 +23,14 @@ import groupsRoutes from './api/groupsRoutes.js'
 import analyticsRoutes from './api/analyticsRoutes.js'
 import learningRoutes from './api/learning.js'
 import voiceRoutes from './api/voiceRoutes.js'
+import intelligenceRoutes from './api/intelligenceRoutes.js'
 // Temporarily disabled - need Stripe credentials
 // import shopRoutes from './api/shopRoutes.js'
 // import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
 // import checkoutRoutes from './api/checkoutRoutes.js'
+
+// Conversation Intelligence Service (Self-Improving System)
+import conversationIntelligenceService from './services/ConversationIntelligenceService.js'
 
 // Layer 3 Liberation Business Logic
 import {
@@ -104,6 +108,7 @@ app.use('/api/learning', learningRoutes)  // Learning platform & IVOR education 
 app.use('/api/groups', groupsRoutes)      // Community groups API
 app.use('/api/analytics', analyticsRoutes)  // Analytics dashboard & metrics API
 app.use('/api/voice', voiceRoutes)          // Voice synthesis (MeloTTS) API
+app.use('/api/intelligence', intelligenceRoutes)  // Conversation intelligence & community insights API
 // Temporarily disabled - need Stripe credentials configured
 // app.use('/api/shop', shopRoutes)           // Shop & marketplace API
 // app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
@@ -130,7 +135,9 @@ app.get('/health', (req, res) => {
       'journey-awareness': 'UK Black queer liberation stages',
       'uk-knowledge': 'menrus.co.uk + NHS integration',
       'contextual-responses': 'Stage-appropriate support',
-      'liberation-layer-3': layer3Ecosystem ? 'ACTIVE' : 'INITIALIZING'
+      'liberation-layer-3': layer3Ecosystem ? 'ACTIVE' : 'INITIALIZING',
+      'conversation-intelligence': conversationIntelligenceService.isInitialized() ? 'ACTIVE' : 'PENDING',
+      'ai-theme-extraction': conversationIntelligenceService.isAIExtractEnabled() ? 'GROQ' : 'KEYWORD'
     }
   })
 })
@@ -203,10 +210,11 @@ app.get('/health/liberation', async (req, res) => {
   }
 })
 
-// Core AI Chat endpoint with Liberation Layer 3 Integration
+// Core AI Chat endpoint with Liberation Layer 3 Integration + Conversation Intelligence
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, sessionId, userContext } = req.body
+    const currentSessionId = sessionId || `session-${Date.now()}`
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
@@ -214,6 +222,13 @@ app.post('/api/chat', async (req, res) => {
         communitySupport: '/community/support'
       })
     }
+
+    // Track conversation for intelligence (Self-Improving System)
+    conversationIntelligenceService.addMessage(currentSessionId, {
+      role: 'user',
+      content: message,
+      timestamp: new Date()
+    })
 
     // Liberation Layer 3 Validation (if ecosystem is initialized)
     let liberationValidation = null
@@ -224,7 +239,7 @@ app.post('/api/chat', async (req, res) => {
           payload: {
             message,
             userContext,
-            sessionId,
+            sessionId: currentSessionId,
             interactionType: 'ai_chat'
           },
           liberationContext: {
@@ -266,16 +281,48 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // Journey-aware AI response with UK-specific context
-    const journeyResponse = await generateJourneyAwareResponse(message, userContext, sessionId)
+    const journeyResponse = await generateJourneyAwareResponse(message, userContext, currentSessionId)
+
+    // Track assistant response for intelligence
+    conversationIntelligenceService.addMessage(currentSessionId, {
+      role: 'assistant',
+      content: journeyResponse.response,
+      timestamp: new Date()
+    })
+
+    // Track resources recommended (if any)
+    if (journeyResponse.resourcesProvided && journeyResponse.resourcesProvided.length > 0) {
+      for (const resourceTitle of journeyResponse.resourcesProvided) {
+        conversationIntelligenceService.trackResourceRecommendation(
+          currentSessionId,
+          `resource-${resourceTitle.toLowerCase().replace(/\s+/g, '-')}`,
+          resourceTitle,
+          journeyResponse.journeyContext?.stage || 'general'
+        )
+      }
+    }
+
+    // Store conversation intelligence after significant exchanges (5+ messages or follow-up required)
+    // This is non-blocking - fire and forget
+    const conversationId = `conv-${Date.now()}-${currentSessionId.substring(0, 8)}`
+    if (journeyResponse.followUpRequired || journeyResponse.journeyContext?.urgencyLevel === 'critical') {
+      conversationIntelligenceService.storeConversationIntelligence(
+        conversationId,
+        currentSessionId,
+        userContext?.userId || 'anonymous',
+        journeyResponse.journeyContext?.stage || 'growth'
+      ).catch(err => console.error('Background intelligence storage error:', err))
+    }
 
     res.json({
       response: journeyResponse.response,
       journeyContext: journeyResponse.journeyContext,
       nextStageGuidance: journeyResponse.nextStageGuidance,
-      sessionId,
+      sessionId: currentSessionId,
+      conversationId,
       timestamp: new Date().toISOString(),
       domain: 'core',
-      features: ['wellness', 'problem-solving', 'journaling', 'crisis-support', 'achievements', 'journey-awareness', 'liberation-layer-3'],
+      features: ['wellness', 'problem-solving', 'journaling', 'crisis-support', 'achievements', 'journey-awareness', 'liberation-layer-3', 'conversation-intelligence'],
       resourcesProvided: journeyResponse.resourcesProvided,
       followUpRequired: journeyResponse.followUpRequired,
       // Liberation Layer 3 Compliance
@@ -904,14 +951,24 @@ async function initializeAndStart() {
     console.log('   Liberation validation will be skipped')
   }
 
+  // Log Conversation Intelligence status
+  console.log('')
+  console.log('🧠 CONVERSATION INTELLIGENCE STATUS:')
+  console.log(`   ├── Database Connected: ${conversationIntelligenceService.isInitialized() ? '✅ YES' : '⚠️ MOCK MODE'}`)
+  console.log(`   ├── AI Theme Extraction: ${conversationIntelligenceService.isAIExtractEnabled() ? '✅ GROQ' : '⚠️ KEYWORD-BASED'}`)
+  console.log(`   └── Community Insights: ${conversationIntelligenceService.isInitialized() ? 'AVAILABLE' : 'LIMITED'}`)
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
   // Start Express server
   app.listen(PORT, () => {
     console.log('')
     console.log(`🤖 IVOR Core running on port ${PORT}`)
     console.log(`📊 Features: Wellness | Problem-Solving | Journaling | Crisis Support | Achievements`)
     console.log(`🏴‍☠️ Liberation: ${layer3Ecosystem ? 'LAYER 3 ACTIVE' : 'DEGRADED MODE'}`)
+    console.log(`🧠 Intelligence: ${conversationIntelligenceService.isInitialized() ? 'LEARNING FROM CONVERSATIONS' : 'MOCK MODE'}`)
     console.log(`🔗 Health: http://localhost:${PORT}/health`)
     console.log(`🔗 Liberation: http://localhost:${PORT}/health/liberation`)
+    console.log(`🔗 Intelligence: http://localhost:${PORT}/api/intelligence/status`)
     console.log(`💜 Ready to support Black queer liberation and personal growth!`)
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   })
