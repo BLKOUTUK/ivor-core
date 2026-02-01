@@ -149,14 +149,14 @@ export class ContextualResponseGenerator {
     resources: UKResource[],
     knowledge: KnowledgeEntry[]
   ): string {
-    let response = `💜 **I hear you, and I want you to know that you're not alone.** Your safety and wellbeing matter deeply.\n\n`
+    let response = `I hear you. What you're going through matters, and you don't have to sit with it alone.\n\n`
 
     // Immediate safety resources
     const emergencyResources = resources.filter(r => r.emergency)
     if (emergencyResources.length > 0) {
-      response += `🚨 **Immediate Support Available:**\n`
+      response += `**Immediate support — right now:**\n`
       emergencyResources.slice(0, 3).forEach(resource => {
-        response += `• **${resource.title}**: ${resource.phone ? `📞 ${resource.phone}` : '🌐 ' + resource.website}\n`
+        response += `- **${resource.title}**: ${resource.phone || resource.website}\n`
         response += `  ${resource.description}\n`
       })
       response += `\n`
@@ -165,14 +165,14 @@ export class ContextualResponseGenerator {
     // Specific crisis information
     if (knowledge.length > 0) {
       const crisisKnowledge = knowledge[0]
-      response += `📋 **Specific Information:**\n${crisisKnowledge.content.substring(0, 200)}...\n\n`
+      response += `${crisisKnowledge.content.substring(0, 200)}...\n\n`
     }
 
-    // Affirming message
-    response += `**You are valued in this community.** Crisis doesn't define you, and there are people who understand what you're going through.\n\n`
+    // Direct, grounded message
+    response += `You are part of this community. What you're facing right now is not the whole of who you are.\n\n`
 
     // Next steps
-    response += `🌱 **When you're ready**, stabilization support will help you build ongoing safety and support systems. You don't have to figure this out alone.`
+    response += `When you're ready — and only then — there's stabilisation support to help you build something steadier. No rush. No performance required.`
 
     return response
   }
@@ -186,18 +186,17 @@ export class ContextualResponseGenerator {
     resources: UKResource[],
     knowledge: KnowledgeEntry[]
   ): string {
-    let response = `🌟 **You're taking important steps toward stability - that shows real strength.**\n\n`
+    let response = `Stability isn't glamorous, but it's the foundation everything else gets built on. The fact you're here, working on it, says something.\n\n`
 
     // Ongoing support resources
     if (resources.length > 0) {
-      response += `🤝 **Ongoing Support Available:**\n`
+      response += `**Support worth knowing about:**\n`
       resources.slice(0, 3).forEach(resource => {
-        response += `• **${resource.title}**\n`
-        response += `  ${resource.description}\n`
-        if (resource.phone) response += `  📞 ${resource.phone}\n`
-        if (resource.website) response += `  🌐 ${resource.website}\n`
+        response += `- **${resource.title}** — ${resource.description}\n`
+        if (resource.phone) response += `  Phone: ${resource.phone}\n`
+        if (resource.website) response += `  ${resource.website}\n`
         if (resource.cost === 'nhs_funded' || resource.cost === 'free') {
-          response += `  ✅ ${resource.cost === 'nhs_funded' ? 'NHS funded' : 'Free service'}\n`
+          response += `  ${resource.cost === 'nhs_funded' ? 'NHS funded' : 'Free'}\n`
         }
         response += `\n`
       })
@@ -206,14 +205,14 @@ export class ContextualResponseGenerator {
     // Specific stabilization information
     if (knowledge.length > 0) {
       const stabilizationInfo = knowledge[0]
-      response += `📚 **Key Information:**\n${stabilizationInfo.content.substring(0, 300)}...\n\n`
+      response += `${stabilizationInfo.content.substring(0, 300)}...\n\n`
     }
 
-    // Progress acknowledgment
-    response += `💪 **Building stability takes courage**, and you're already showing that. Regular support, whether through therapy, peer groups, or community connections, can make a real difference.\n\n`
+    // Honest encouragement
+    response += `Regular support — therapy, peer groups, community connections — makes a real difference. Not because it fixes everything overnight, but because it means you're not carrying it alone.\n\n`
 
-    // Next stage guidance
-    response += `🚀 **Looking ahead**: As stability grows, you might find yourself interested in personal growth opportunities - skill building, education, or exploring new interests. There's no rush; you're exactly where you need to be.`
+    // Next stage
+    response += `As things steady, you might find yourself drawn to growth — new skills, education, exploring interests you'd shelved. No rush. You'll know when.`
 
     return response
   }
@@ -227,18 +226,17 @@ export class ContextualResponseGenerator {
     resources: UKResource[],
     knowledge: KnowledgeEntry[]
   ): string {
-    let response = `✨ **Love seeing you focused on growth and development! This is where things get exciting.**\n\n`
+    let response = `Right then — growth mode. This is where it gets interesting.\n\n`
 
     // Growth resources
     if (resources.length > 0) {
-      response += `🎯 **Growth Opportunities:**\n`
+      response += `**Worth looking into:**\n`
       resources.slice(0, 3).forEach(resource => {
-        response += `• **${resource.title}**\n`
-        response += `  ${resource.description}\n`
+        response += `- **${resource.title}** — ${resource.description}\n`
         if (resource.specializations.length > 0) {
-          response += `  🔧 Specializes in: ${resource.specializations.join(', ')}\n`
+          response += `  Focus: ${resource.specializations.join(', ')}\n`
         }
-        if (resource.website) response += `  🌐 ${resource.website}\n`
+        if (resource.website) response += `  ${resource.website}\n`
         response += `\n`
       })
     }
@@ -246,14 +244,11 @@ export class ContextualResponseGenerator {
     // Specific growth information
     if (knowledge.length > 0) {
       const growthInfo = knowledge[0]
-      response += `📈 **Here's what you need to know:**\n${growthInfo.content.substring(0, 350)}...\n\n`
+      response += `${growthInfo.content.substring(0, 350)}...\n\n`
     }
 
-    // Encouragement for growth mindset
-    response += `🌟 **Your growth journey is powerful** - you're building skills, knowledge, and confidence that serve both you and your community.\n\n`
-
-    // Community connection hint
-    response += `💫 **Something beautiful happens** when personal growth connects with community healing. Keep growing - your authentic self and unique gifts are needed in this world.`
+    // Grounded encouragement
+    response += `The skills and confidence you're building here serve you first — and the community benefits from that too. Personal growth and collective power aren't separate things.`
 
     return response
   }
@@ -267,18 +262,17 @@ export class ContextualResponseGenerator {
     resources: UKResource[],
     knowledge: KnowledgeEntry[]
   ): string {
-    let response = `🫂 **Beautiful - community healing is where the real magic happens. You're ready to heal together.**\n\n`
+    let response = `Community healing. This is where individual work starts to connect with something bigger.\n\n`
 
     // Community resources
     if (resources.length > 0) {
-      response += `🌈 **Community Healing Spaces:**\n`
+      response += `**Spaces doing this work:**\n`
       resources.slice(0, 3).forEach(resource => {
-        response += `• **${resource.title}**\n`
-        response += `  ${resource.description}\n`
+        response += `- **${resource.title}** — ${resource.description}\n`
         if (resource.culturalCompetency.blackSpecific || resource.culturalCompetency.lgbtqSpecific) {
-          response += `  ✊🏿 Culturally specific support\n`
+          response += `  Culturally specific support\n`
         }
-        if (resource.website) response += `  🌐 ${resource.website}\n`
+        if (resource.website) response += `  ${resource.website}\n`
         response += `\n`
       })
     }
@@ -286,14 +280,14 @@ export class ContextualResponseGenerator {
     // Community healing information
     if (knowledge.length > 0) {
       const healingInfo = knowledge[0]
-      response += `🌱 **Community Wisdom:**\n${healingInfo.content.substring(0, 300)}...\n\n`
+      response += `${healingInfo.content.substring(0, 300)}...\n\n`
     }
 
-    // Community healing affirmation
-    response += `💜 **Healing in community is different** - it's where your individual journey connects with collective liberation. You're not just healing yourself; you're contributing to healing for all of us.\n\n`
+    // Honest reflection
+    response += `Healing in community is a different thing to healing alone. Your journey connects with collective liberation — you're not just sorting yourself out, you're contributing to something that outlasts any one of us.\n\n`
 
     // Advocacy connection
-    response += `🔥 **When you're ready**, community healing often naturally flows into advocacy and organizing - using your healing journey to support systemic change. The world needs your voice and experience.`
+    response += `For many people, community healing flows naturally into organising and advocacy. That's not a requirement — just something to notice if it starts pulling at you.`
 
     return response
   }
@@ -307,18 +301,17 @@ export class ContextualResponseGenerator {
     resources: UKResource[],
     knowledge: KnowledgeEntry[]
   ): string {
-    let response = `🔥 **YES! Ready to turn your power into action for the community. This is liberation work.**\n\n`
+    let response = `Advocacy. This is where it gets real — turning lived experience into systemic change.\n\n`
 
     // Advocacy resources
     if (resources.length > 0) {
-      response += `✊🏿 **Organizing & Advocacy:**\n`
+      response += `**Organising and advocacy:**\n`
       resources.slice(0, 3).forEach(resource => {
-        response += `• **${resource.title}**\n`
-        response += `  ${resource.description}\n`
+        response += `- **${resource.title}** — ${resource.description}\n`
         if (resource.specializations.includes('organizing') || resource.specializations.includes('advocacy')) {
-          response += `  📢 Organizing focused\n`
+          response += `  Organising focused\n`
         }
-        if (resource.website) response += `  🌐 ${resource.website}\n`
+        if (resource.website) response += `  ${resource.website}\n`
         response += `\n`
       })
     }
@@ -326,14 +319,14 @@ export class ContextualResponseGenerator {
     // Advocacy information
     if (knowledge.length > 0) {
       const advocacyInfo = knowledge[0]
-      response += `⚖️ **Know Your Power:**\n${advocacyInfo.content.substring(0, 350)}...\n\n`
+      response += `${advocacyInfo.content.substring(0, 350)}...\n\n`
     }
 
-    // Advocacy empowerment
-    response += `🌟 **Your advocacy is rooted in your journey** - the challenges you've faced, the healing you've done, the community connections you've built. That's what makes your voice so powerful.\n\n`
+    // Direct empowerment
+    response += `Your advocacy is rooted in your journey — the challenges, the healing, the community you've built around you. That's not abstract power. That's lived authority.\n\n`
 
-    // Systems change focus
-    response += `🏛️ **Systems change happens** when people like you decide their liberation is worth fighting for. Whether it's policy change, community organizing, or cultural transformation - you're part of the movement.`
+    // Systems change
+    response += `Systems change happens when people decide their liberation is worth the fight. Policy, community organising, cultural transformation — whatever form yours takes, you're part of something that matters.`
 
     return response
   }
@@ -347,20 +340,19 @@ export class ContextualResponseGenerator {
     resources: UKResource[],
     knowledge: KnowledgeEntry[]
   ): string {
-    let response = `💜 **I'm here to support you on your liberation journey!**\n\n`
+    let response = `AIvor here. Let me see what I can do for you.\n\n`
 
     if (resources.length > 0) {
-      response += `🌟 **Here are some resources that might help:**\n`
+      response += `**Some places worth knowing about:**\n`
       resources.slice(0, 3).forEach(resource => {
-        response += `• **${resource.title}**: ${resource.description}\n`
-        if (resource.phone) response += `  📞 ${resource.phone}\n`
-        if (resource.website) response += `  🌐 ${resource.website}\n`
+        response += `- **${resource.title}** — ${resource.description}\n`
+        if (resource.phone) response += `  Phone: ${resource.phone}\n`
+        if (resource.website) response += `  ${resource.website}\n`
       })
       response += `\n`
     }
 
-    response += `✨ **Whatever you're exploring**, remember that your journey toward liberation and authenticity matters. You deserve support, community, and resources that affirm who you are.\n\n`
-    response += `🤝 **What specific support are you looking for today?** I'm here to help with mental health resources, HIV/sexual health information, housing support, legal guidance, community connections, or anything else on your mind.`
+    response += `I can help with mental health resources, sexual health information, housing support, legal guidance, community connections, or whatever else is on your mind. What do you need?`
 
     return response
   }
@@ -373,22 +365,22 @@ export class ContextualResponseGenerator {
 
     switch (stage) {
       case 'crisis':
-        return `🌱 **Next: Stabilization** - Building ongoing safety, regular support systems, and beginning to process what happened at your own pace. You don't have to do this alone.`
-      
+        return `**Next: Stabilisation** — Building ongoing safety, regular support, and space to process at your own pace. You don't have to do this alone.`
+
       case 'stabilization':
-        return `🚀 **Next: Growth** - As stability strengthens, exploring personal development, skill building, and new opportunities becomes possible. No rush - you'll know when you're ready.`
-      
+        return `**Next: Growth** — As stability strengthens, personal development, skill building, and new opportunities open up. No rush — you'll know when you're ready.`
+
       case 'growth':
-        return `🫂 **Next: Community Healing** - Connecting your personal growth with community healing spaces, sharing your journey, and supporting others in theirs.`
-      
+        return `**Next: Community Healing** — Connecting your personal growth with community spaces, sharing your journey, and supporting others through theirs.`
+
       case 'community_healing':
-        return `✊🏿 **Next: Advocacy** - Using your healing journey and community connections to work for systemic change and liberation for all Black queer people.`
-      
+        return `**Next: Advocacy** — Using your healing journey and community connections to work for systemic change and liberation for all Black queer people.`
+
       case 'advocacy':
-        return `♻️ **Continuing: Full-Circle Liberation** - Your advocacy work often deepens all previous stages - continued healing, growth, community connection, and supporting others through their journeys.`
-      
+        return `**Full-Circle Liberation** — Advocacy often deepens everything that came before — continued healing, growth, community connection, and supporting others through their journeys.`
+
       default:
-        return `🌟 **Your journey is unique** - these stages aren't linear, and you might move between them. Trust yourself to know what you need right now.`
+        return `These stages aren't linear — you might move between them, and that's how it should be. Trust yourself to know what you need right now.`
     }
   }
 

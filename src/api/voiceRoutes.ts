@@ -1,7 +1,8 @@
 /**
- * Voice Routes for IVOR Core
- * TTS using self-hosted Mozilla TTS (synesthesiam/mozilla-tts)
- * Zero recurring costs, WCAG 2.1 AA compliant
+ * Voice Routes for AIvor
+ * TTS using Chatterbox (resemble-ai) — self-hosted on Coolify
+ * Features: emotion control, voice cloning, paralinguistic tags
+ * Fallback: Mozilla TTS if Chatterbox unavailable
  */
 
 import express from 'express';
@@ -9,8 +10,10 @@ import { createClient } from '@supabase/supabase-js';
 
 const router = express.Router();
 
-// Environment variables - Mozilla TTS on Coolify
-// Priority: env var > public domain > container name
+// Chatterbox TTS (primary) — OpenAI-compatible API
+const CHATTERBOX_URL = process.env.CHATTERBOX_URL || 'http://chatterbox.blkoutuk.cloud';
+const CHATTERBOX_EMOTION = parseFloat(process.env.CHATTERBOX_EMOTION || '0.6');
+// Legacy Mozilla TTS fallback
 const MELOTTS_URL = process.env.MELOTTS_URL || process.env.TTS_URL || 'http://tts.blkoutuk.cloud';
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -100,36 +103,65 @@ router.post('/', async (req, res) => {
       console.warn('[Voice] Supabase not configured, skipping cache check');
     }
 
-    // Call Mozilla TTS API (synesthesiam/mozilla-tts)
-    console.log(`[Voice] Calling Mozilla TTS at ${MELOTTS_URL}`);
-
-    // Try multiple endpoint formats for compatibility
+    // Try Chatterbox TTS first (OpenAI-compatible), then Mozilla TTS fallback
     let ttsResponse: Response | null = null;
-    const endpoints = [
-      { url: `${MELOTTS_URL}/api/tts?text=${encodeURIComponent(text)}`, method: 'GET' },
-      { url: `${MELOTTS_URL}/?text=${encodeURIComponent(text)}`, method: 'GET' },
-      { url: `${MELOTTS_URL}/synthesize?text=${encodeURIComponent(text)}`, method: 'GET' },
-    ];
+    let ttsSource: string = 'unknown';
 
-    for (const endpoint of endpoints) {
-      try {
-        console.log(`[Voice] Trying ${endpoint.method} ${endpoint.url}`);
-        const response = await fetch(endpoint.url, { method: endpoint.method });
-        if (response.ok) {
-          ttsResponse = response;
-          console.log(`[Voice] Success with ${endpoint.url}`);
-          break;
+    // 1. Chatterbox TTS (primary) — OpenAI-compatible /v1/audio/speech
+    try {
+      console.log(`[Voice] Trying Chatterbox TTS at ${CHATTERBOX_URL}`);
+      const chatterboxResponse = await fetch(`${CHATTERBOX_URL}/v1/audio/speech`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          input: text,
+          voice: 'aivor',  // Custom cloned voice (or default if not configured)
+          model: 'chatterbox',
+          response_format: 'mp3',
+          exaggeration: CHATTERBOX_EMOTION,  // 0.0 = monotone, 1.0 = theatrical
+        }),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (chatterboxResponse.ok) {
+        ttsResponse = chatterboxResponse;
+        ttsSource = 'chatterbox';
+        console.log(`[Voice] Chatterbox TTS success`);
+      } else {
+        console.log(`[Voice] Chatterbox returned ${chatterboxResponse.status}, trying fallback`);
+      }
+    } catch (e) {
+      console.log(`[Voice] Chatterbox unavailable: ${e}`);
+    }
+
+    // 2. Mozilla TTS fallback
+    if (!ttsResponse) {
+      console.log(`[Voice] Falling back to Mozilla TTS at ${MELOTTS_URL}`);
+      const legacyEndpoints = [
+        `${MELOTTS_URL}/api/tts?text=${encodeURIComponent(text)}`,
+        `${MELOTTS_URL}/?text=${encodeURIComponent(text)}`,
+        `${MELOTTS_URL}/synthesize?text=${encodeURIComponent(text)}`,
+      ];
+
+      for (const url of legacyEndpoints) {
+        try {
+          const response = await fetch(url, { method: 'GET' });
+          if (response.ok) {
+            ttsResponse = response;
+            ttsSource = 'mozilla-tts';
+            console.log(`[Voice] Mozilla TTS success with ${url}`);
+            break;
+          }
+        } catch (e) {
+          // continue to next endpoint
         }
-      } catch (e) {
-        console.log(`[Voice] Failed ${endpoint.url}: ${e}`);
       }
     }
 
     if (!ttsResponse || !ttsResponse.ok) {
-      throw new Error(`Mozilla TTS API error: No working endpoint found`);
+      throw new Error('No TTS engine available (tried Chatterbox and Mozilla TTS)');
     }
 
-    // Alias for compatibility with rest of code
     const melottsResponse = ttsResponse;
 
     // Get audio buffer
@@ -177,7 +209,7 @@ router.post('/', async (req, res) => {
     return res.status(200).json({
       success: true,
       audioUrl: signedUrl.signedUrl,
-      source: 'melotts',
+      source: ttsSource,
       cached: false,
       expiresIn: 604800,
       service: 'ivor-voice',

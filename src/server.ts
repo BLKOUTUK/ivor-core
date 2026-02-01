@@ -720,73 +720,42 @@ async function generateAIResponse(message: string, context?: any, sessionId?: st
 
 function generateFallbackResponse(message: string): string {
   const lowerMessage = message.toLowerCase()
-  
+
   // Contextual responses based on keywords
   if (lowerMessage.includes('wellness') || lowerMessage.includes('health')) {
-    return `🌟 I love that you're prioritizing wellness! I have a comprehensive 15-section wellness assessment that can help you understand your current strengths and growth areas. 
+    return `Good that you're thinking about wellness. I've got a 15-section assessment that maps out where you're strong and where there's room to grow — covering mental-emotional health, identity, relationships, purpose, the lot.
 
-The assessment covers everything from mental-emotional health to identity authenticity, relationships, and purpose. Would you like to start your wellness journey assessment, or would you prefer to explore specific areas first?
-
-💜 You've got this! Wellness is about progress, not perfection.`
+You can start the full assessment or pick a specific area. What suits you?`
   }
-  
+
   if (lowerMessage.includes('journal') || lowerMessage.includes('write') || lowerMessage.includes('reflection')) {
-    return `📖 Journaling is such a powerful tool for growth and self-discovery! I offer guided journaling templates with morning intention-setting and evening reflection practices.
+    return `Journaling — underrated and genuinely useful. I've got guided templates for morning intention-setting and evening reflection, plus prompts around identity, emotions, and goals.
 
-Whether you want to explore identity, process emotions, set goals, or just free-write your thoughts, I'm here to support your journaling journey. 
-
-✨ What feels most important to explore through writing today? Your authentic voice matters!`
+You can also just free-write. Sometimes that's where the real stuff surfaces. What do you want to explore?`
   }
-  
+
   if (lowerMessage.includes('stress') || lowerMessage.includes('anxious') || lowerMessage.includes('overwhelm') || lowerMessage.includes('hard') || lowerMessage.includes('difficult')) {
-    return `💜 I hear you, and first - what you're feeling is completely valid. Life can be challenging, especially when you're navigating multiple identities and systems.
+    return `I hear you. Navigating multiple identities and systems is genuinely hard — no need to dress that up.
 
-I'm here to support you with:
-🧠 Problem-solving frameworks to break down challenges
-🌟 Wellness coaching for stress management
-📖 Reflective journaling to process emotions
-🆘 Crisis support resources when you need them
-
-You don't have to face this alone. What feels most supportive right now?`
+I can help with problem-solving frameworks to break challenges down, wellness coaching for stress management, reflective journaling, or crisis support resources if things feel urgent. What would be most useful right now?`
   }
-  
+
   if (lowerMessage.includes('achievement') || lowerMessage.includes('goal') || lowerMessage.includes('progress')) {
-    return `🏆 Yes! I love supporting people in recognizing their wins and setting meaningful goals. Your progress matters, even the small steps!
+    return `Progress tracking — practical and motivating. I can help you set meaningful goals, track milestones, and build habits that actually stick.
 
-I can help you:
-• Track personal achievements and milestones
-• Set realistic, empowering goals
-• Celebrate your growth journey
-• Build sustainable habits for success
-
-What achievement or goal would you like to explore? Remember, you're already doing amazing things! ✨`
+The small steps count as much as the big ones. What are you working toward?`
   }
-  
+
   if (lowerMessage.includes('community') || lowerMessage.includes('connect') || lowerMessage.includes('belong')) {
-    return `💜 Community and belonging are so essential! You're part of the BLKOUT community - a space created by and for Black queer folks to thrive together.
+    return `You're part of the BLKOUT community — a space built by and for Black queer people. That's not a slogan, it's a Community Benefit Society with cooperative ownership.
 
-While I'm here for personal support, I can help you think through:
-• Building authentic relationships
-• Finding your community spaces
-• Navigating identity and belonging
-• Connecting with resources and networks
-
-What aspect of community or connection feels most important to you right now? 🌈`
+I can help you think through building connections, finding community spaces, navigating identity and belonging, or linking up with resources and networks. What's on your mind?`
   }
-  
-  // Default response for general messages
-  return `Hey there! 🎉 I'm IVOR, and I'm genuinely excited to support you on your liberation journey! 
 
-Based on what you shared: "${message}" - I'm here to meet you wherever you are. 
+  // Default response
+  return `AIvor here — BLKOUT's AI assistant, named after Ivor Cummings. I'm running in limited mode right now, so I can't have a full conversation, but I can still point you in the right direction.
 
-🌟 I offer:
-• Wellness coaching with personalized assessments
-• Problem-solving frameworks for any challenge
-• Transformational journaling practices
-• Achievement tracking & celebration
-• Crisis support when you need it
-
-💜 What feels most important to explore right now? I'm here to support your growth, your healing, and your thriving! You deserve all the good things.`
+I know about wellness coaching, problem-solving frameworks, journaling, crisis support, and community resources across the UK. What do you need?`
 }
 
 function calculateWellnessScore(answers: any): number {
@@ -860,26 +829,48 @@ function extractPrimaryTopic(message: string): string {
 function getCrisisResources() {
   return [
     {
-      id: 'suicide-prevention-lifeline',
-      name: '988 Suicide & Crisis Lifeline', 
+      id: 'samaritans',
+      name: 'Samaritans',
       type: 'hotline',
-      contactInfo: '988',
+      contactInfo: '116 123',
       priority: 'emergency',
-      specializations: ['suicide prevention', 'crisis intervention'],
+      specializations: ['crisis support', 'suicide prevention', 'emotional distress'],
       lgbtqSpecific: false,
       blackSpecific: false,
-      availability: '24/7'
+      availability: '24/7, free from any phone'
     },
     {
-      id: 'trevor-project',
-      name: 'The Trevor Project',
-      type: 'hotline', 
-      contactInfo: '1-866-488-7386',
+      id: 'switchboard-lgbt',
+      name: 'Switchboard LGBT+ Helpline',
+      type: 'hotline',
+      contactInfo: '0300 330 0630',
       priority: 'emergency',
-      specializations: ['LGBTQ+ youth', 'suicide prevention'],
+      specializations: ['LGBTQ+ support', 'crisis intervention', 'coming out'],
       lgbtqSpecific: true,
       blackSpecific: false,
-      availability: '24/7'
+      availability: '10am-10pm daily'
+    },
+    {
+      id: 'mindout',
+      name: 'MindOut LGBTQ+ Mental Health',
+      type: 'service',
+      contactInfo: 'mindout.org.uk',
+      priority: 'high',
+      specializations: ['LGBTQ+ mental health', 'counselling', 'peer support'],
+      lgbtqSpecific: true,
+      blackSpecific: false,
+      availability: 'Monday-Friday'
+    },
+    {
+      id: 'shout-crisis-text',
+      name: 'Shout Crisis Text Line',
+      type: 'text',
+      contactInfo: 'Text SHOUT to 85258',
+      priority: 'emergency',
+      specializations: ['crisis support', 'text-based', 'anxiety', 'depression'],
+      lgbtqSpecific: false,
+      blackSpecific: false,
+      availability: '24/7, free'
     }
   ]
 }
@@ -893,9 +884,9 @@ function calculateRiskLevel(urgency: string, symptoms: string[]): string {
 function getRecommendedActions(urgency: string): string[] {
   switch (urgency) {
     case 'emergency':
-      return ['Call 988 immediately', 'Go to nearest emergency room', 'Contact emergency services']
+      return ['Call Samaritans: 116 123 (free, 24/7)', 'Call 999 for immediate danger', 'Text SHOUT to 85258']
     case 'high':
-      return ['Contact crisis helpline within 1 hour', 'Reach out to trusted person', 'Consider professional help']
+      return ['Call Switchboard: 0300 330 0630', 'Reach out to a trusted person', 'Contact MindOut: mindout.org.uk']
     default:
       return ['Use coping strategies', 'Schedule regular check-ins', 'Build support network']
   }
@@ -962,14 +953,14 @@ async function initializeAndStart() {
   // Start Express server
   app.listen(PORT, () => {
     console.log('')
-    console.log(`🤖 IVOR Core running on port ${PORT}`)
+    console.log(`🤖 AIvor Core running on port ${PORT}`)
     console.log(`📊 Features: Wellness | Problem-Solving | Journaling | Crisis Support | Achievements`)
     console.log(`🏴‍☠️ Liberation: ${layer3Ecosystem ? 'LAYER 3 ACTIVE' : 'DEGRADED MODE'}`)
     console.log(`🧠 Intelligence: ${conversationIntelligenceService.isInitialized() ? 'LEARNING FROM CONVERSATIONS' : 'MOCK MODE'}`)
     console.log(`🔗 Health: http://localhost:${PORT}/health`)
     console.log(`🔗 Liberation: http://localhost:${PORT}/health/liberation`)
     console.log(`🔗 Intelligence: http://localhost:${PORT}/api/intelligence/status`)
-    console.log(`💜 Ready to support Black queer liberation and personal growth!`)
+    console.log(`💜 AIvor ready — supporting Black queer liberation and personal growth`)
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   })
 }

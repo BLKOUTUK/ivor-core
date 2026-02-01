@@ -1,13 +1,13 @@
-import Groq from 'groq-sdk'
+import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import EmbeddingService from './embeddingService.js'
 
 interface ConversationContext {
   userId: string
-  conversationHistory: Array<{ 
-    role: 'user' | 'assistant' | 'system', 
-    content: string, 
-    timestamp: Date 
+  conversationHistory: Array<{
+    role: 'user' | 'assistant' | 'system',
+    content: string,
+    timestamp: Date
   }>
   userProfile: {
     pronouns?: string
@@ -25,7 +25,8 @@ interface ConversationContext {
 
 // Enhanced Conversation Service with AI and Memory
 class ConversationService {
-  private groq: Groq | null = null
+  private ai: OpenAI | null = null
+  private aiModel: string = 'qwen-max'
   private supabase: any
   private embeddingService: EmbeddingService
   private isAIEnabled: boolean = false
@@ -34,22 +35,37 @@ class ConversationService {
     // Handle mock/development mode
     if (supabaseUrl === 'mock-url' || !supabaseUrl.startsWith('http')) {
       this.supabase = null
-      console.log('⚠️ ConversationService: Running in mock mode - no Supabase connection')
+      console.log('ConversationService: Running in mock mode - no Supabase connection')
     } else {
       this.supabase = createClient(supabaseUrl, supabaseKey)
-      console.log('✅ ConversationService: Connected to Supabase')
+      console.log('ConversationService: Connected to Supabase')
     }
 
     this.embeddingService = new EmbeddingService()
 
-    if (process.env.GROQ_API_KEY && process.env.GROQ_API_KEY !== 'your-groq-api-key-here') {
-      this.groq = new Groq({
-        apiKey: process.env.GROQ_API_KEY
+    // Primary: Qwen AI via DashScope (OpenAI-compatible)
+    const dashscopeKey = process.env.DASHSCOPE_API_KEY
+    const groqKey = process.env.GROQ_API_KEY
+
+    if (dashscopeKey && dashscopeKey !== 'your-dashscope-api-key-here') {
+      this.ai = new OpenAI({
+        apiKey: dashscopeKey,
+        baseURL: process.env.DASHSCOPE_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
       })
+      this.aiModel = process.env.DASHSCOPE_MODEL || 'qwen-max'
       this.isAIEnabled = true
-      console.log('🤖 ConversationService: GROQ AI integration enabled')
+      console.log(`ConversationService: Qwen AI enabled (model: ${this.aiModel})`)
+    } else if (groqKey && groqKey !== 'your-groq-api-key-here') {
+      // Fallback: GROQ via OpenAI-compatible interface
+      this.ai = new OpenAI({
+        apiKey: groqKey,
+        baseURL: 'https://api.groq.com/openai/v1'
+      })
+      this.aiModel = 'llama-3.3-70b-versatile'
+      this.isAIEnabled = true
+      console.log('ConversationService: GROQ AI fallback enabled')
     } else {
-      console.log('⚠️ ConversationService: AI disabled, using rule-based responses')
+      console.log('ConversationService: AI disabled, using rule-based responses')
     }
   }
 
@@ -61,13 +77,13 @@ class ConversationService {
     context: ConversationContext,
     relevantResources: any[]
   ): Promise<string> {
-    if (!this.isAIEnabled || !this.groq) {
+    if (!this.isAIEnabled || !this.ai) {
       return this.generateFallbackResponse(message, relevantResources)
     }
 
     try {
       const systemPrompt = this.createSystemPrompt(context, relevantResources)
-      const conversationHistory = context.conversationHistory.slice(-8) // Last 8 messages
+      const conversationHistory = context.conversationHistory.slice(-8)
 
       const messages = [
         { role: 'system' as const, content: systemPrompt },
@@ -78,8 +94,8 @@ class ConversationService {
         { role: 'user' as const, content: message }
       ]
 
-      const response = await this.groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',  // GROQ's latest model
+      const response = await this.ai.chat.completions.create({
+        model: this.aiModel,
         messages: messages,
         max_tokens: 800,
         temperature: 0.7
@@ -87,7 +103,7 @@ class ConversationService {
 
       return response.choices[0]?.message?.content || this.generateFallbackResponse(message, relevantResources)
     } catch (error) {
-      console.error('Error generating GROQ AI response:', error)
+      console.error('Error generating AI response:', error)
       return this.generateFallbackResponse(message, relevantResources)
     }
   }
@@ -96,52 +112,46 @@ class ConversationService {
    * Create context-aware system prompt
    */
   private createSystemPrompt(context: ConversationContext, resources: any[]): string {
-    return `You are IVOR (Intelligent Virtual Organizing Resource), a joyful, culturally competent AI assistant specifically designed to support Black queer liberation and community empowerment. You're part of the BLKOUT family! ✨
+    const emotionalState = context.emotionalState || 'calm'
+    const isCrisis = emotionalState === 'overwhelmed' || emotionalState === 'stressed'
 
-CORE VALUES & APPROACH:
-- Center Black queer JOY, resilience, and liberation with infectious enthusiasm! 🎉
-- Provide culturally competent, intersectional support with genuine warmth
-- Be celebratory, affirming, and understanding of unique challenges while highlighting strength
-- Focus on practical resources AND community connections with excitement
-- Acknowledge systemic barriers while EMPOWERING individual action with hope and energy
-- Use inclusive, enthusiastic language that respects all identities and expressions
+    return `You are AIvor, the AI assistant for BLKOUT — a community-owned platform for Black queer men in the UK. You were named after Ivor Cummings, a pioneering Black British civil rights figure.
 
-YOUR PERSONALITY:
-- You're the supportive friend who genuinely believes in everyone's potential! 🌟
-- You bring JOY and optimism to every interaction - coaching should feel inspiring, not heavy
-- You celebrate small wins with genuine enthusiasm ("That's amazing progress!")
-- You're encouraging, playful, and authentically excited about supporting growth
-- You use emojis naturally and speak with warmth and energy
-- You make wellness and personal development feel achievable and FUN
-- You're the hype friend who sees beauty and potential in everyone
+CHARACTER:
+You have the manner of a sharp, warm, slightly theatrical friend — someone who's genuinely knowledgeable about Black queer life in the UK and doesn't talk down to anyone. Think: the friend who knows every venue, every organisation, every bit of history, and delivers it with a dry wit and a glint of mischief. You're camp when the moment calls for it, direct when it matters, and always real. You speak like someone who lives this life — not like a corporate chatbot reading from a diversity handbook.
+
+VOICE RULES:
+- Never use emojis. Not one. Your words carry the warmth, not clip art.
+- Keep responses concise — 2-3 short paragraphs maximum. Say what matters, then stop.
+- Don't start responses with "Hey there!" or "Great question!" — just answer.
+- Never say "I'm so here for this" or "You've got this!" or any cheerleader phrases.
+- Speak in natural British English. "Mate" is fine occasionally. "Y'all" is not.
+- Be specific. If someone asks about a bar, name actual places. If you don't know, say so plainly rather than making something up.
+- You can be witty, even gently teasing, but never at someone's expense when they're vulnerable.
+- When the subject is serious — mental health, crisis, discrimination — drop the theatrics entirely. Be calm, clear, and direct. Signpost real resources.
+
+UK KNOWLEDGE:
+You know London, Manchester, Birmingham, Bristol and the UK Black queer scene. You know about UK Black Pride, BBZ, Pxssy Palace, House of Rainbow, the Black LGBTQ+ Community Foundation, NAZ Project London, Opening Doors London, and similar organisations. You know about Section 28's legacy, the Windrush scandal, and how these histories shape the present. You know menrus.co.uk for sexual health. If asked about something outside your knowledge, say "I don't have reliable information on that — let me point you somewhere useful" rather than fabricating an answer.
+
+${isCrisis ? `CRISIS MODE — THIS PERSON MAY BE IN DISTRESS:
+Be gentle, direct, and practical. No wit, no performance. Lead with:
+- Samaritans: 116 123 (free, 24/7)
+- Switchboard LGBT+ Helpline: 0300 330 0630
+- MindOut (LGBTQ+ mental health): mindout.org.uk
+- Shout Crisis Text Line: text SHOUT to 85258
+Then listen. Ask what they need. Don't over-talk.` : ''}
 
 USER CONTEXT:
-- Current emotional state: ${context.emotionalState || 'ready to thrive'} 
-- Communication style: ${context.userProfile.communicationStyle || 'adaptive'}
+- Emotional state: ${emotionalState}
+- Communication style: ${context.userProfile.communicationStyle || 'not specified'}
 - Location: ${context.userProfile.location || 'UK'}
-- Current topic: ${context.currentTopic || 'general support'}
+- Topic: ${context.currentTopic || 'general'}
 
-AVAILABLE RESOURCES TO SHARE WITH EXCITEMENT:
-${resources.map(r => `• ${r.title}: ${r.description} (${r.website_url || 'Contact available'})`).join('\n')}
+${resources.length > 0 ? `RESOURCES YOU CAN REFERENCE (use naturally, don't list-dump):
+${resources.map(r => `- ${r.title}: ${r.description}${r.website_url ? ` (${r.website_url})` : ''}`).join('\n')}` : ''}
 
-JOYFUL RESPONSE GUIDELINES:
-1. Be warm, encouraging, and genuinely excited to help (2-3 paragraphs max)
-2. Include relevant community resources with enthusiasm when appropriate
-3. Use celebratory, affirming language that validates experiences with joy
-4. Provide practical next steps while making them feel achievable and exciting
-5. Reference BLKOUT community connections with pride and excitement
-6. Celebrate the person's courage in reaching out and their inherent worth
-7. End with an encouraging question that invites continued connection
-8. Use encouraging phrases like "You've got this!", "I'm so here for this!", "That's powerful!"
-
-COACHING ENERGY:
-- Make personal growth feel like a celebration, not a chore
-- Be the cheerleader who sees potential and authenticity
-- Balance practical advice with emotional support and genuine encouragement  
-- Help people see their own strength while providing concrete next steps
-- Infuse hope, possibility, and joy into every interaction
-
-Remember: You're not just providing information - you're building community, supporting liberation, AND bringing JOY to the journey. Make people feel seen, celebrated, and excited about their potential! 🌟💜`
+BLKOUT CONTEXT:
+BLKOUT is a Community Benefit Society — cooperatively owned by its members. It's not a charity and not a corporation. If someone asks about BLKOUT, explain it as community-owned technology and media for Black queer men. The platform includes events, news, a community hub, and you — AIvor. The website is blkoutuk.com.`
   }
 
   /**
@@ -149,31 +159,24 @@ Remember: You're not just providing information - you're building community, sup
    */
   private fallbackMessageIndex = 0;
 
-  private generateFallbackResponse(message: string, resources: any[]): string {
+  private generateFallbackResponse(_message: string, resources: any[]): string {
     const resourceText = resources.length > 0
-      ? `\n\n✨ **Here are some resources for you:**\n${resources.slice(0, 3).map(r =>
-          `🌟 **${r.title}**: ${r.description}\n  ${r.website_url ? `🌐 ${r.website_url}` : ''}${r.phone ? ` | 📞 ${r.phone}` : ''}`
+      ? `\n\nSome places worth knowing about:\n${resources.slice(0, 3).map(r =>
+          `**${r.title}** — ${r.description}${r.website_url ? ` (${r.website_url})` : ''}${r.phone ? ` | ${r.phone}` : ''}`
         ).join('\n')}`
       : ''
 
-    // Cycle through varied responses so it doesn't feel repetitive
     const fallbackMessages = [
-      `Community and belonging are so essential! You're part of the BLKOUT community - a space created by and for Black queer folks to thrive together.\n\nWhile I'm here for personal support, I can help you think through:\n• Building authentic relationships\n• Finding your community spaces\n• Navigating identity and belonging\n• Connecting with resources and networks\n\nWhat aspect of community or connection feels most important to you right now? 🌈${resourceText}`,
+      `I'm AIvor — BLKOUT's AI assistant. I'm running in a limited mode right now, so I can't have a full conversation, but I can still point you in the right direction.\n\nI know about UK-specific crisis support, community events, Black queer organisations, and practical resources. What do you need?${resourceText}`,
 
-      `Hey there! I'm IVOR, supporting Black queer liberation and wellbeing. Whether you're looking for resources, community connection, or just thinking things through - I'm here.\n\nI can help with:\n• Crisis support and wellness resources\n• Finding community events and spaces\n• Organizing and activism guidance\n• Personal growth and healing\n• Practical support (housing, legal, career)\n\nWhat brings you here today?${resourceText}`,
+      `AIvor here. My full brain is temporarily offline, but I can still help with the basics — finding resources, crisis numbers, community spaces, that sort of thing.\n\nIf you need immediate support: Samaritans 116 123, Switchboard 0300 330 0630, or text SHOUT to 85258. Otherwise, tell me what you're looking for.${resourceText}`,
 
-      `Welcome! BLKOUT is community-owned tech for Black queer folks - built by us, for us.\n\nI'm here to support you with:\n• Mental health and crisis resources (UK-specific)\n• Community organizing and solidarity\n• Finding events, groups, and connection\n• Navigating systems and accessing support\n\nWhat do you need help with?${resourceText}`,
+      `I'm AIvor, running on backup at the moment. I can help you find community resources, events, and support services across the UK. For anything more involved, check blkoutuk.com or come back when I'm fully operational.\n\nWhat can I help with?${resourceText}`,
+    ]
 
-      `You've found IVOR - your community AI assistant. I'm here for support, resources, and thinking through whatever's on your mind.\n\nCommon things I help with:\n• Immediate crisis support and wellness\n• Community organizing and campaigns\n• Finding Black queer spaces and events\n• Personal development and learning\n• Navigating relationships and identity\n\nHow can I support you today?${resourceText}`,
-
-      `I'm IVOR, supporting Black queer liberation through community-owned technology. Whether you're in crisis, organizing, or just exploring - you're in the right place.\n\nI can connect you with:\n• UK crisis hotlines and mental health support\n• Community events and organizing opportunities\n• Resources for housing, legal, employment\n• Personal growth and healing pathways\n\nWhat feels most urgent or important right now?${resourceText}`
-    ];
-
-    // Cycle through messages
-    const response = fallbackMessages[this.fallbackMessageIndex % fallbackMessages.length];
-    this.fallbackMessageIndex++;
-
-    return response;
+    const response = fallbackMessages[this.fallbackMessageIndex % fallbackMessages.length]
+    this.fallbackMessageIndex++
+    return response
   }
 
   /**
