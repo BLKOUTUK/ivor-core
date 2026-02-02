@@ -516,7 +516,7 @@ export class LiberationImpactBusinessLogicService {
     let contribution = 0.3; // Base contribution
 
     // Stage-based contribution calculation
-    if (context.currentStage === 'advocacy' || context.currentStage === 'community_healing') {
+    if (context.stage === 'advocacy' || context.stage === 'community_healing') {
       contribution += 0.4;
     }
 

@@ -8,8 +8,9 @@
  */
 
 import Groq from 'groq-sdk';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
+import { getSupabaseClient } from '../lib/supabaseClient.js';
 
 export interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';
@@ -57,12 +58,9 @@ export class ConversationIntelligenceService {
   private conversationStartTimes: Map<string, Date> = new Map();
 
   constructor() {
-    // Initialize Supabase
-    const supabaseUrl = process.env.SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-
-    if (supabaseUrl && supabaseKey && supabaseUrl.startsWith('http')) {
-      this.supabase = createClient(supabaseUrl, supabaseKey);
+    // Initialize Supabase via shared singleton
+    this.supabase = getSupabaseClient();
+    if (this.supabase) {
       console.log('ConversationIntelligenceService: Connected to Supabase');
     } else {
       console.log('ConversationIntelligenceService: Running without Supabase (mock mode)');

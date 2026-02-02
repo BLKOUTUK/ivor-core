@@ -75,7 +75,7 @@ export class CommunityBusinessLogicService {
     // Empowerment Opportunity Identification - Business Logic  
     const empowermentOpportunities = this.identifyEmpowermentOpportunities(
       interactionType,
-      journeyContext.currentStage,
+      journeyContext.stage,
       liberationValues
     );
 
@@ -325,7 +325,7 @@ export class CommunityBusinessLogicService {
 
     const communityRules = this.communityRules.get(targetCommunityId) || [];
     const applicableRules = communityRules.filter(rule => 
-      rule.applicableJourneyStages.includes(journeyContext.currentStage)
+      rule.applicableJourneyStages.includes(journeyContext.stage)
     );
 
     // Protection Assessment Business Logic
@@ -347,7 +347,7 @@ export class CommunityBusinessLogicService {
     }
 
     // Default Protection for Vulnerable Stages
-    if (this.isVulnerableJourneyStage(journeyContext.currentStage)) {
+    if (this.isVulnerableJourneyStage(journeyContext.stage)) {
       protectionMeasures.push('vulnerable_stage_extra_protection');
       protectionMeasures.push('community_support_notification');
     }
@@ -355,7 +355,7 @@ export class CommunityBusinessLogicService {
     // Empowerment Opportunities Generation
     const empowermentOpportunities = this.identifyEmpowermentOpportunities(
       interactionType,
-      journeyContext.currentStage,
+      journeyContext.stage,
       {
         creatorSovereignty: 0.75,
         antiOppressionValidation: true,
@@ -503,7 +503,7 @@ export class CommunityBusinessLogicService {
       advocacy: 1.0     // Maximum impact for advocacy
     };
 
-    impact *= stageMultipliers[journeyContext.currentStage] || 0.6;
+    impact *= stageMultipliers[journeyContext.stage] || 0.6;
 
     return Math.min(impact, 1.0);
   }

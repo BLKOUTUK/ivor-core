@@ -6,7 +6,7 @@
  */
 
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../lib/supabaseClient.js';
 
 const router = express.Router();
 
@@ -15,8 +15,6 @@ const CHATTERBOX_URL = process.env.CHATTERBOX_URL || 'http://chatterbox.blkoutuk
 const CHATTERBOX_EMOTION = parseFloat(process.env.CHATTERBOX_EMOTION || '0.6');
 // Legacy Mozilla TTS fallback
 const MELOTTS_URL = process.env.MELOTTS_URL || process.env.TTS_URL || 'http://tts.blkoutuk.cloud';
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Simple hash function for cache keys
 function hashText(text: string): string {
@@ -65,10 +63,11 @@ router.post('/', async (req, res) => {
 
     console.log(`[Voice] Processing request for ${text.length} characters (hash: ${textHash})`);
 
-    // Initialize Supabase client for caching
-    if (SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+    // Check Supabase cache if configured
+    const supabaseForCache = getSupabaseClient();
+    if (supabaseForCache) {
       try {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+        const supabase = supabaseForCache;
 
         // Check if cached audio exists
         const { data: cachedFiles } = await supabase.storage
@@ -169,14 +168,13 @@ router.post('/', async (req, res) => {
     console.log(`[Voice] Generated ${audioBuffer.byteLength} bytes of audio`);
 
     // Upload to Supabase Storage if configured
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
       console.warn('[Voice] Supabase not configured, returning audio directly');
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Content-Length', audioBuffer.byteLength.toString());
       return res.status(200).send(Buffer.from(audioBuffer));
     }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
     // Upload to storage
     const { error: uploadError } = await supabase.storage
@@ -269,7 +267,7 @@ router.get('/health', async (_req, res) => {
         error: ttsError || undefined
       },
       supabase: {
-        configured: !!(SUPABASE_URL && SUPABASE_SERVICE_KEY)
+        configured: !!getSupabaseClient()
       },
       features: {
         accent: 'English',

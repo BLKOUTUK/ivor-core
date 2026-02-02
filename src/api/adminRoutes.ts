@@ -1,16 +1,11 @@
 import express from 'express'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from '../lib/supabaseClient.js'
 
 const router = express.Router()
 
-// Initialize Supabase client (only if environment variables are available)
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-
-let supabase: any = null
-if (supabaseUrl && supabaseKey) {
-  supabase = createClient(supabaseUrl, supabaseKey)
-} else {
+// Use shared Supabase client
+const supabase = getSupabaseClient()
+if (!supabase) {
   console.warn('Supabase not configured - using memory-only mode for admin routes')
 }
 

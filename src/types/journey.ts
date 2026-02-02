@@ -99,25 +99,24 @@ export interface KnowledgeEntry {
 }
 
 export interface JourneyResponse {
-  message: string
-  journeyStage: JourneyStage
-  nextStagePathway: string
+  response: string
+  journeyContext: JourneyContext
   resources: UKResource[]
   knowledge: KnowledgeEntry[]
+  nextStageGuidance: string
   followUpRequired: boolean
-  culturallyAffirming: boolean
-  specificInformation: boolean
+  resourcesProvided: string[]
   // Trust scoring additions
-  trustScore: number
-  trustLevel: 'high' | 'medium' | 'low' | 'very_low'
-  trustDescription: string
-  sourceVerification: {
+  trustScore?: number
+  trustLevel?: 'high' | 'medium' | 'low' | 'very_low'
+  trustDescription?: string
+  sourceVerification?: {
     verified: number
     unverified: number
     total: number
   }
-  requestFeedback: boolean
-  responseId: string
+  requestFeedback?: boolean
+  responseId?: string
 }
 
 export interface StageTransition {

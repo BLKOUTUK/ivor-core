@@ -73,12 +73,15 @@ describe('Layer 3 Business Logic Services - QI Compliance Test Suite', () => {
   };
 
   const testJourneyContext: JourneyContext = {
-    currentStage: 'growth' as JourneyStage,
-    previousStages: ['crisis', 'stabilization'],
-    empowermentLevel: 0.7,
-    communityConnections: 5,
-    resourceAccess: 0.8,
-    liberationProgress: 0.75
+    stage: 'growth' as JourneyStage,
+    emotionalState: 'calm',
+    urgencyLevel: 'low',
+    location: 'london',
+    communityConnection: 'connected',
+    firstTime: false,
+    returningUser: true,
+    previousStages: ['crisis', 'stabilization'] as JourneyStage[],
+    resourceAccessPreference: 'flexible'
   };
 
   beforeEach(() => {
@@ -804,11 +807,14 @@ function validateLiberationCompliance(result: any): void {
  */
 function createTestJourneyContext(stage: JourneyStage = 'growth'): JourneyContext {
   return {
-    currentStage: stage,
-    previousStages: stage === 'crisis' ? [] : ['crisis'],
-    empowermentLevel: 0.7,
-    communityConnections: 5,
-    resourceAccess: 0.8,
-    liberationProgress: 0.75
+    stage,
+    emotionalState: 'calm',
+    urgencyLevel: 'low',
+    location: 'london',
+    communityConnection: 'connected',
+    firstTime: false,
+    returningUser: true,
+    previousStages: stage === 'crisis' ? [] : ['crisis'] as JourneyStage[],
+    resourceAccessPreference: 'flexible'
   };
 }

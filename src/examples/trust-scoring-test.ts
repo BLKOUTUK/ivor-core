@@ -163,7 +163,7 @@ export async function runTrustScoringTests() {
         test.context
       )
 
-      console.log(`  Journey Stage: ${response.journeyStage}`)
+      console.log(`  Journey Stage: ${response.journeyContext?.stage}`)
       console.log(`  Trust Score: ${response.trustScore?.toFixed(3) || 'N/A'}`)
       console.log(`  Trust Level: ${response.trustLevel || 'N/A'}`)
       console.log(`  Sources Verified: ${response.sourceVerification?.verified || 0}/${response.sourceVerification?.total || 0}`)
@@ -171,7 +171,7 @@ export async function runTrustScoringTests() {
       console.log(`  Knowledge Entries: ${response.knowledge.length}`)
       console.log(`  Requests Feedback: ${response.requestFeedback}`)
       console.log(`  Response ID: ${response.responseId || 'N/A'}`)
-      console.log(`  Message Preview: ${response.message.substring(0, 150)}...`)
+      console.log(`  Message Preview: ${response.response.substring(0, 150)}...`)
       
     } catch (error) {
       console.log(`  ❌ Error: ${error.message}`)

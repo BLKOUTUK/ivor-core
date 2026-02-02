@@ -3,7 +3,6 @@ import cors from 'cors'
 import helmet from 'helmet'
 import dotenv from 'dotenv'
 import ConversationService from './conversationService.js'
-import { getCoreIntegration } from './crossDomainIntegration.js'
 import JourneyAwareConversationService from './services/JourneyAwareConversationService.js'
 import { DataContextService } from './services/DataContextService.js'
 import { getSupabaseClient } from './lib/supabaseClient.js'
@@ -666,40 +665,20 @@ async function generateJourneyAwareResponse(message: string, context?: any, sess
   resourcesProvided: string[]
 }> {
   try {
-    if (baseConversationService.isAIAvailable()) {
-      const conversationContext = {
-        userId: context?.userId || 'anonymous',
-        conversationHistory: [],
-        userProfile: context || {},
-        emotionalState: detectEmotionalState(message) as 'calm' | 'stressed' | 'excited' | 'overwhelmed' | 'joyful' | 'uncertain',
-        sessionId: sessionId || 'default',
-        currentTopic: extractPrimaryTopic(message),
-        lastInteraction: new Date()
-      }
-      
-      const journeyResponse = await journeyConversationService.generateJourneyAwareResponse(message, conversationContext)
+    // JourneyAwareConversationService handles emotion detection,
+    // topic extraction, and AI/fallback routing internally
+    const journeyResponse = await journeyConversationService.generateJourneyAwareResponse(
+      message,
+      context || {},
+      sessionId || 'default'
+    )
 
-      // Convert JourneyResponse to expected format
-      return {
-        response: journeyResponse.response,
-        journeyContext: journeyResponse.journeyContext,
-        nextStageGuidance: journeyResponse.nextStageGuidance,
-        followUpRequired: journeyResponse.followUpRequired,
-        resourcesProvided: journeyResponse.resourcesProvided
-      }
-    } else {
-      return {
-        response: generateFallbackResponse(message),
-        journeyContext: {
-          stage: 'growth',
-          emotion: 'hopeful',
-          urgency: 'low',
-          location: { region: 'london', ruralUrban: 'urban', transportAccess: true }
-        },
-        nextStageGuidance: "Continue your journey at your own pace.",
-        followUpRequired: false,
-        resourcesProvided: []
-      }
+    return {
+      response: journeyResponse.response,
+      journeyContext: journeyResponse.journeyContext,
+      nextStageGuidance: journeyResponse.nextStageGuidance,
+      followUpRequired: journeyResponse.followUpRequired,
+      resourcesProvided: journeyResponse.resourcesProvided
     }
   } catch (error) {
     console.error('Journey-aware AI response error:', error)
@@ -707,7 +686,7 @@ async function generateJourneyAwareResponse(message: string, context?: any, sess
       response: generateFallbackResponse(message),
       journeyContext: {
         stage: 'growth',
-        emotion: 'hopeful', 
+        emotion: 'hopeful',
         urgency: 'low',
         location: { region: 'london', ruralUrban: 'urban', transportAccess: true }
       },
@@ -716,12 +695,6 @@ async function generateJourneyAwareResponse(message: string, context?: any, sess
       resourcesProvided: []
     }
   }
-}
-
-// Legacy function for compatibility
-async function generateAIResponse(message: string, context?: any, sessionId?: string): Promise<string> {
-  const journeyResponse = await generateJourneyAwareResponse(message, context, sessionId)
-  return journeyResponse.response
 }
 
 function generateFallbackResponse(message: string): string {
@@ -806,31 +779,6 @@ function analyzeSentiment(content: string): 'positive' | 'neutral' | 'challengin
   return 'neutral'
 }
 
-function detectEmotionalState(message: string): string {
-  // Enhanced emotional state detection for journey awareness
-  const lowerMessage = message.toLowerCase()
-  
-  if (lowerMessage.includes('excited') || lowerMessage.includes('happy') || lowerMessage.includes('amazing')) return 'joyful'
-  if (lowerMessage.includes('stress') || lowerMessage.includes('overwhelm') || lowerMessage.includes('panic')) return 'stressed'
-  if (lowerMessage.includes('calm') || lowerMessage.includes('peaceful') || lowerMessage.includes('stable')) return 'calm'
-  if (lowerMessage.includes('confused') || lowerMessage.includes('lost') || lowerMessage.includes('unsure')) return 'uncertain'
-  if (lowerMessage.includes('crisis') || lowerMessage.includes('emergency') || lowerMessage.includes('desperate')) return 'overwhelmed'
-  
-  return 'uncertain'
-}
-
-function extractPrimaryTopic(message: string): string {
-  const lowerMessage = message.toLowerCase()
-  
-  if (lowerMessage.includes('hiv') || lowerMessage.includes('sexual health') || lowerMessage.includes('prep')) return 'sexual_health'
-  if (lowerMessage.includes('mental health') || lowerMessage.includes('therapy') || lowerMessage.includes('counselling')) return 'mental_health'
-  if (lowerMessage.includes('housing') || lowerMessage.includes('homeless') || lowerMessage.includes('evict')) return 'housing'
-  if (lowerMessage.includes('job') || lowerMessage.includes('work') || lowerMessage.includes('employment')) return 'employment'
-  if (lowerMessage.includes('discrimination') || lowerMessage.includes('rights') || lowerMessage.includes('legal')) return 'legal_rights'
-  if (lowerMessage.includes('community') || lowerMessage.includes('connect') || lowerMessage.includes('group')) return 'community'
-  
-  return 'general_support'
-}
 
 function getCrisisResources() {
   return [

@@ -4,11 +4,9 @@
  * Centers liberation pedagogy and trauma-informed teaching
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../lib/supabaseClient.js';
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = getSupabaseClient();
 
 export interface LearningModule {
   id: string;

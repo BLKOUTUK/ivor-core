@@ -18,7 +18,7 @@ interface ConversationContext {
     communicationStyle?: string
   }
   currentTopic?: string
-  emotionalState?: 'calm' | 'stressed' | 'excited' | 'overwhelmed' | 'joyful' | 'uncertain'
+  emotionalState?: 'calm' | 'stressed' | 'excited' | 'overwhelmed' | 'joyful' | 'uncertain' | 'crisis' | 'hopeful'
   lastInteraction?: Date
   sessionId: string
 }

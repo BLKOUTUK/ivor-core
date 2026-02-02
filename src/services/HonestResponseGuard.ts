@@ -75,20 +75,28 @@ export class HonestResponseGuard {
     
     if (isEmergency) {
       return {
-        message: `🚨 **This sounds urgent** - I want to make sure you get immediate, proper help:
+        response: `🚨 **This sounds urgent** - I want to make sure you get immediate, proper help:
 
 **Emergency Services**: 999 (if in immediate danger)
 **Crisis Support**: Samaritans 116 123 (free, 24/7)
 **LGBTQ+ Crisis**: LGBT+ Switchboard 0300 330 0630
 
 I'm designed to provide personalized support, but I don't have enough verified information to give you the specific guidance you need right now. Please contact these services directly - they have trained professionals who can help immediately.`,
-        journeyStage: 'crisis',
-        nextStagePathway: 'Please contact crisis services directly for immediate professional support',
+        journeyContext: {
+          stage: 'crisis' as const,
+          emotionalState: 'crisis' as const,
+          urgencyLevel: 'emergency' as const,
+          location: 'unknown' as const,
+          communityConnection: 'isolated' as const,
+          firstTime: false,
+          returningUser: false,
+          resourceAccessPreference: 'phone' as const
+        },
+        nextStageGuidance: 'Please contact crisis services directly for immediate professional support',
         resources: this.getEmergencyResources(),
         knowledge: [],
         followUpRequired: true,
-        culturallyAffirming: true,
-        specificInformation: false,
+        resourcesProvided: this.getEmergencyResources().map(r => r.title),
         trustScore: 0.2,
         trustLevel: 'very_low',
         trustDescription: 'Limited system knowledge - seek direct professional support',
@@ -103,7 +111,7 @@ I'm designed to provide personalized support, but I don't have enough verified i
     const suggestedSources = this.getSuggestedSourcesForTopic(topicArea)
 
     return {
-      message: `💜 I want to be honest - I don't have enough reliable, verified information to give you the specific guidance you're looking for about ${topicArea}.
+      response: `I want to be honest - I don't have enough reliable, verified information to give you the specific guidance you're looking for about ${topicArea}.
 
 Rather than guess or give you generic information that might not apply to your situation, I'd recommend going directly to these trusted sources:
 
@@ -112,18 +120,26 @@ ${suggestedSources.map(source => `• **${source.name}**: ${source.description}`
 I'm designed to provide journey-aware, culturally affirming support for Black queer liberation, but I believe you deserve accurate, verified information rather than my best guess. These sources will give you the reliable information you need.
 
 If this was urgent and I missed that, please call the emergency numbers above immediately.`,
-      journeyStage: 'growth',
-      nextStagePathway: 'Seek verified information from trusted sources listed above',
+      journeyContext: {
+        stage: 'growth' as const,
+        emotionalState: 'uncertain' as const,
+        urgencyLevel: 'low' as const,
+        location: 'unknown' as const,
+        communityConnection: 'exploring' as const,
+        firstTime: false,
+        returningUser: false,
+        resourceAccessPreference: 'online' as const
+      },
+      nextStageGuidance: 'Seek verified information from trusted sources listed above',
       resources: [],
       knowledge: [],
       followUpRequired: false,
-      culturallyAffirming: true,
-      specificInformation: false,
+      resourcesProvided: [],
       trustScore: 0.1,
       trustLevel: 'very_low',
       trustDescription: 'Insufficient system knowledge - directing to trusted sources',
       sourceVerification: { verified: 0, unverified: 0, total: 0 },
-      requestFeedback: true, // Ask for feedback to improve
+      requestFeedback: true,
       responseId: crypto.randomUUID()
     }
   }
