@@ -345,19 +345,20 @@ export class JourneyAwareConversationService {
    */
   private generateFallbackResponse(message: string, userContext: any): any {
     return {
-      response: `💜 I want to be honest with you - I'm experiencing technical difficulties and cannot currently provide the personalized, journey-aware support I'm designed to offer.
+      response: `I'll be straight with you — I'm having technical difficulties and can't give you the personalised response I should.
 
-🚨 **If this is an emergency**: Please call 999 or go to your nearest A&E immediately
-📞 **Crisis support**: Samaritans 116 123 (free, 24/7, confidential)
-🏳️‍🌈 **LGBTQ+ support**: LGBT+ Switchboard 0300 330 0630
+**If this is urgent:**
+- Emergency: 999 or nearest A&E
+- Samaritans: 116 123 (free, 24/7)
+- Switchboard LGBT+: 0300 330 0630
+- Text SHOUT to 85258
 
-Rather than give you generic information that might not match your specific situation, I'd prefer to direct you to these reliable resources where you can get proper support:
+Rather than give you something generic, here are reliable places to start:
+- **NHS.uk** for verified health information
+- **menrus.co.uk** for Black gay men's sexual health
+- **BLKOUT**: blkoutuk.com for community resources
 
-• **NHS.uk** for verified health information
-• **menrus.co.uk** for Black gay men's sexual health
-• **Local LGBTQ+ organizations** in your area
-
-I don't want to pretend I can help when my systems aren't working properly. Please reach out to the appropriate services above, and I hope to serve you better when my technical issues are resolved.`,
+I'd rather point you somewhere useful than pretend I can help when my systems aren't working properly.`,
       journeyContext: {
         stage: 'growth',
         emotionalState: 'uncertain',
