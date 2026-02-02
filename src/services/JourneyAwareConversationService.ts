@@ -3,6 +3,7 @@ import { UKKnowledgeBase } from './UKKnowledgeBase.js'
 import { ContextualResponseGenerator } from './ContextualResponseGenerator.js'
 import { TrustScoreService } from './TrustScoreService.js'
 import ConversationService from '../conversationService.js'
+import { DataContextService } from './DataContextService.js'
 import { JourneyContext, JourneyResponse, JourneyStage } from '../types/journey.js'
 import { randomUUID } from 'crypto'
 
@@ -16,14 +17,16 @@ export class JourneyAwareConversationService {
   private responseGenerator: ContextualResponseGenerator
   private trustScoreService: TrustScoreService
   private conversationService: ConversationService
+  private dataContextService: DataContextService | null
   private userJourneyHistory: Map<string, JourneyStage[]>
 
-  constructor(conversationService: ConversationService) {
+  constructor(conversationService: ConversationService, dataContextService?: DataContextService) {
     this.journeyDetector = new JourneyStageDetector()
     this.knowledgeBase = new UKKnowledgeBase()
     this.responseGenerator = new ContextualResponseGenerator()
     this.trustScoreService = new TrustScoreService()
     this.conversationService = conversationService
+    this.dataContextService = dataContextService || null
     this.userJourneyHistory = new Map()
   }
 
@@ -62,6 +65,17 @@ export class JourneyAwareConversationService {
         topic
       )
 
+      // Fetch live BLKOUT data for the prompt (non-blocking on failure)
+      let liveDataPrompt = ''
+      if (this.dataContextService) {
+        try {
+          const liveContext = await this.dataContextService.getContext(message, topic, location)
+          liveDataPrompt = DataContextService.formatForPrompt(liveContext)
+        } catch (error) {
+          console.warn('[JourneyAware] Live data fetch failed, continuing without:', error)
+        }
+      }
+
       // Generate AI response if available, otherwise use pattern-matching
       let responseText: string
       if (this.conversationService.isAIAvailable()) {
@@ -76,11 +90,12 @@ export class JourneyAwareConversationService {
           lastInteraction: new Date()
         }
 
-        // Use GROQ AI with journey context
+        // Use GROQ AI with journey context + live data
         responseText = await this.conversationService.generateAIResponse(
           message,
           conversationContext,
-          relevantResources
+          relevantResources,
+          liveDataPrompt
         )
       } else {
         // Fallback to pattern-matching

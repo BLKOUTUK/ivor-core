@@ -5,6 +5,8 @@ import dotenv from 'dotenv'
 import ConversationService from './conversationService.js'
 import { getCoreIntegration } from './crossDomainIntegration.js'
 import JourneyAwareConversationService from './services/JourneyAwareConversationService.js'
+import { DataContextService } from './services/DataContextService.js'
+import { getSupabaseClient } from './lib/supabaseClient.js'
 import feedbackRoutes from './api/feedbackRoutes.js'
 import adminRoutes from './api/adminRoutes.js'
 import socialMediaRoutes from './api/socialMediaRoutes.js'
@@ -56,8 +58,11 @@ const baseConversationService = new ConversationService(
   process.env.SUPABASE_ANON_KEY || 'mock-key'
 )
 
-// Initialize journey-aware conversation service
-const journeyConversationService = new JourneyAwareConversationService(baseConversationService)
+// Initialize data context service for live Supabase data in prompts
+const dataContextService = new DataContextService(getSupabaseClient())
+
+// Initialize journey-aware conversation service with live data
+const journeyConversationService = new JourneyAwareConversationService(baseConversationService, dataContextService)
 
 // Layer 3 Liberation Ecosystem - initialized at startup
 let layer3Ecosystem: Awaited<ReturnType<typeof initializeLayer3EcosystemForIVOR>> | null = null
@@ -137,7 +142,8 @@ app.get('/health', (req, res) => {
       'contextual-responses': 'Stage-appropriate support',
       'liberation-layer-3': layer3Ecosystem ? 'ACTIVE' : 'INITIALIZING',
       'conversation-intelligence': conversationIntelligenceService.isInitialized() ? 'ACTIVE' : 'PENDING',
-      'ai-theme-extraction': conversationIntelligenceService.isAIExtractEnabled() ? 'GROQ' : 'KEYWORD'
+      'ai-theme-extraction': conversationIntelligenceService.isAIExtractEnabled() ? 'GROQ' : 'KEYWORD',
+      'live-data-context': getSupabaseClient() ? 'ACTIVE' : 'DISABLED'
     }
   })
 })

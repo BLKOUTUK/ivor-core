@@ -75,14 +75,15 @@ class ConversationService {
   async generateAIResponse(
     message: string,
     context: ConversationContext,
-    relevantResources: any[]
+    relevantResources: any[],
+    liveDataPrompt?: string
   ): Promise<string> {
     if (!this.isAIEnabled || !this.ai) {
       return this.generateFallbackResponse(message, relevantResources)
     }
 
     try {
-      const systemPrompt = this.createSystemPrompt(context, relevantResources)
+      const systemPrompt = this.createSystemPrompt(context, relevantResources, liveDataPrompt)
       const conversationHistory = context.conversationHistory.slice(-8)
 
       const messages = [
@@ -111,7 +112,7 @@ class ConversationService {
   /**
    * Create context-aware system prompt
    */
-  private createSystemPrompt(context: ConversationContext, resources: any[]): string {
+  private createSystemPrompt(context: ConversationContext, resources: any[], liveDataPrompt?: string): string {
     const emotionalState = context.emotionalState || 'calm'
     const isCrisis = emotionalState === 'overwhelmed' || emotionalState === 'stressed'
 
@@ -156,6 +157,8 @@ USER CONTEXT:
 
 ${resources.length > 0 ? `RESOURCES YOU CAN REFERENCE (use naturally, don't list-dump):
 ${resources.map(r => `- ${r.title}: ${r.description}${r.website_url ? ` (${r.website_url})` : ''}`).join('\n')}` : ''}
+
+${liveDataPrompt || ''}
 
 BLKOUT CONTEXT:
 BLKOUT is a Community Benefit Society — cooperatively owned by its members. It's not a charity and not a corporation. If someone asks about BLKOUT, explain it as community-owned technology and media for Black queer men. The platform includes events, news, a community hub, and you — AIvor. The website is blkoutuk.com.`
