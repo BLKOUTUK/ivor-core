@@ -1,11 +1,13 @@
 /**
  * Voice Routes for AIvor
  * TTS using Chatterbox (resemble-ai) — self-hosted on Coolify
- * Features: emotion control, voice cloning, paralinguistic tags
+ * Features: emotion control, voice cloning with Gielgud reference, paralinguistic tags
  * Fallback: Mozilla TTS if Chatterbox unavailable
  */
 
 import express from 'express';
+import path from 'path';
+import fs from 'fs';
 import { getSupabaseClient } from '../lib/supabaseClient.js';
 
 const router = express.Router();
@@ -15,6 +17,25 @@ const CHATTERBOX_URL = process.env.CHATTERBOX_URL || 'http://chatterbox.blkoutuk
 const CHATTERBOX_EMOTION = parseFloat(process.env.CHATTERBOX_EMOTION || '0.6');
 // Legacy Mozilla TTS fallback
 const MELOTTS_URL = process.env.MELOTTS_URL || process.env.TTS_URL || 'http://tts.blkoutuk.cloud';
+
+// Gielgud voice reference for Chatterbox voice cloning
+// The reference audio is served at /public/gielgud4AIvor.mp3
+const GIELGUD_REF_PATH = path.join(process.cwd(), 'public', 'gielgud4AIvor.mp3');
+const IVOR_BASE_URL = process.env.IVOR_PUBLIC_URL || 'https://ivor.blkoutuk.cloud';
+const GIELGUD_REF_URL = `${IVOR_BASE_URL}/public/gielgud4AIvor.mp3`;
+
+// Load reference audio as base64 for inline voice cloning (fallback if URL not reachable)
+let gielgudRefBase64: string | null = null;
+try {
+  if (fs.existsSync(GIELGUD_REF_PATH)) {
+    gielgudRefBase64 = fs.readFileSync(GIELGUD_REF_PATH).toString('base64');
+    console.log(`[Voice] Loaded Gielgud reference audio (${Math.round(fs.statSync(GIELGUD_REF_PATH).size / 1024)}KB)`);
+  } else {
+    console.warn(`[Voice] Gielgud reference audio not found at ${GIELGUD_REF_PATH}`);
+  }
+} catch (e) {
+  console.warn(`[Voice] Could not load Gielgud reference audio: ${e}`);
+}
 
 // Simple hash function for cache keys
 function hashText(text: string): string {
@@ -107,27 +128,45 @@ router.post('/', async (req, res) => {
     let ttsSource: string = 'unknown';
 
     // 1. Chatterbox TTS (primary) — OpenAI-compatible /v1/audio/speech
+    //    Uses Gielgud reference audio for voice cloning
     try {
-      console.log(`[Voice] Trying Chatterbox TTS at ${CHATTERBOX_URL}`);
+      console.log(`[Voice] Trying Chatterbox TTS at ${CHATTERBOX_URL} with Gielgud voice`);
+
+      // Build request body with reference audio for voice cloning
+      const chatterboxBody: Record<string, any> = {
+        input: text,
+        model: 'chatterbox',
+        response_format: 'mp3',
+        exaggeration: CHATTERBOX_EMOTION,  // 0.0 = monotone, 1.0 = theatrical
+      };
+
+      // Pass reference audio for Gielgud voice cloning
+      if (gielgudRefBase64) {
+        // Inline base64 reference audio (most compatible)
+        chatterboxBody.voice = gielgudRefBase64;
+        chatterboxBody.voice_format = 'mp3';
+        chatterboxBody.reference_audio = gielgudRefBase64;
+        chatterboxBody.audio_prompt = gielgudRefBase64;
+      } else {
+        // URL-based reference (requires Chatterbox to fetch it)
+        chatterboxBody.voice = GIELGUD_REF_URL;
+        chatterboxBody.reference_audio_url = GIELGUD_REF_URL;
+      }
+
       const chatterboxResponse = await fetch(`${CHATTERBOX_URL}/v1/audio/speech`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          input: text,
-          voice: 'aivor',  // Custom cloned voice (or default if not configured)
-          model: 'chatterbox',
-          response_format: 'mp3',
-          exaggeration: CHATTERBOX_EMOTION,  // 0.0 = monotone, 1.0 = theatrical
-        }),
+        body: JSON.stringify(chatterboxBody),
         signal: AbortSignal.timeout(30000),
       });
 
       if (chatterboxResponse.ok) {
         ttsResponse = chatterboxResponse;
-        ttsSource = 'chatterbox';
-        console.log(`[Voice] Chatterbox TTS success`);
+        ttsSource = 'chatterbox-gielgud';
+        console.log(`[Voice] Chatterbox TTS success with Gielgud voice`);
       } else {
-        console.log(`[Voice] Chatterbox returned ${chatterboxResponse.status}, trying fallback`);
+        const errText = await chatterboxResponse.text().catch(() => '');
+        console.log(`[Voice] Chatterbox returned ${chatterboxResponse.status}: ${errText.substring(0, 200)}, trying fallback`);
       }
     } catch (e) {
       console.log(`[Voice] Chatterbox unavailable: ${e}`);

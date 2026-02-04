@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import path from 'path'
 import dotenv from 'dotenv'
 import ConversationService from './conversationService.js'
 import JourneyAwareConversationService from './services/JourneyAwareConversationService.js'
@@ -90,6 +91,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
+
+// Serve static files from public/ (reference audio for voice cloning, etc.)
+app.use('/public', express.static(path.join(process.cwd(), 'public')))
 
 // API routes
 app.use('/api', feedbackRoutes)
