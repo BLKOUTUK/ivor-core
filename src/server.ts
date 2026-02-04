@@ -241,22 +241,23 @@ app.post('/api/chat', async (req, res) => {
       try {
         const layer3Response = await layer3Ecosystem.interfaceManager.processLayer2Request({
           operation: 'community_interaction',
-          payload: {
+          userId: userContext?.userId || 'anonymous',
+          sessionId: currentSessionId,
+          data: {
             message,
             userContext,
-            sessionId: currentSessionId,
-            interactionType: 'ai_chat'
-          },
-          liberationContext: {
-            communityProtectionRequired: true,
-            creatorSovereigntyEnforcement: true,
-            culturalAuthenticityValidation: true,
-            antiOppressionActive: true
-          },
-          metadata: {
-            source: 'ivor-core',
-            endpoint: '/api/chat',
-            timestamp: new Date().toISOString()
+            interactionType: 'ai_chat',
+            liberationContext: {
+              communityProtectionRequired: true,
+              creatorSovereigntyEnforcement: true,
+              culturalAuthenticityValidation: true,
+              antiOppressionActive: true
+            },
+            metadata: {
+              source: 'ivor-core',
+              endpoint: '/api/chat',
+              timestamp: new Date().toISOString()
+            }
           }
         })
 

@@ -655,7 +655,7 @@ export class CommunityBusinessLogicService {
           communityProtection: 0.9,
           culturalAuthenticity: 0.8
         },
-        protectionMeasures: ['Trauma-informed facilitation', 'Community accountability'],
+        protectionMechanisms: ['Trauma-informed facilitation', 'Community accountability'],
         empowermentActions: ['Peer support', 'Healing resource sharing', 'Liberation storytelling']
       },
       {
@@ -670,7 +670,7 @@ export class CommunityBusinessLogicService {
           communityProtection: 0.85,
           culturalAuthenticity: 0.75
         },
-        protectionMeasures: ['Security culture practices', 'Legal observer coordination'],
+        protectionMechanisms: ['Security culture practices', 'Legal observer coordination'],
         empowermentActions: ['Strategic planning', 'Leadership development', 'Campaign execution']
       }
     ]

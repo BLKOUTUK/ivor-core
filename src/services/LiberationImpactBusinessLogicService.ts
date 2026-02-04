@@ -369,7 +369,7 @@ export class LiberationImpactBusinessLogicService {
     timeRange: { start: Date, end: Date },
     liberationValues: LiberationValues
   ) {
-    const dimensions: Record<string, number> = {};
+    const dimensions: { economic: number; social: number; political: number; cultural: number; spiritual: number } = {} as any;
 
     // Economic Dimension Impact - Business Logic
     dimensions.economic = this.calculateEconomicDimensionImpact(entityId, entityType, liberationValues);

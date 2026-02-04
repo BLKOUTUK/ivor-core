@@ -77,14 +77,14 @@ export class ContentBusinessLogicService {
     );
 
     // Cultural Authenticity Assessment - Business Logic
-    const culturalAuthenticity = await this.assessCulturalAuthenticity(
+    const culturalAuthenticity = this.assessCulturalAuthenticityScore(
       contentText,
       contentMetadata,
       liberationValues
     );
 
     // Community Consent Verification - Business Logic
-    const communityConsent = await this.verifyCommunityConsent(
+    const communityConsent = this.checkCommunityConsent(
       contentId,
       contentMetadata,
       liberationValues
@@ -727,6 +727,27 @@ export class ContentBusinessLogicService {
     alignment += values.blackQueerEmpowerment * 0.1;
 
     return Math.max(Math.min(alignment, 1.0), 0);
+  }
+
+  private assessCulturalAuthenticityScore(
+    contentText: string,
+    _contentMetadata: any,
+    liberationValues: LiberationValues
+  ): number {
+    let score = 0.5;
+    if (liberationValues.culturalAuthenticity >= 0.8) score += 0.2;
+    if (liberationValues.blackQueerEmpowerment >= 0.7) score += 0.15;
+    if (contentText && contentText.length > 0) score += 0.15;
+    return Math.min(score, 1.0);
+  }
+
+  private checkCommunityConsent(
+    _contentId: string,
+    _contentMetadata: any,
+    liberationValues: LiberationValues
+  ): boolean {
+    return liberationValues.communityProtection >= 0.7 &&
+           liberationValues.antiOppressionValidation === true;
   }
 
   // Additional utility methods continue with the same pattern...

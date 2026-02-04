@@ -232,7 +232,7 @@ export class CreatorBusinessLogicService {
       success: liberationValidation.isValid && sovereigntyViolations.length === 0,
       data: tracking,
       liberationValidation,
-      empowermentImpact,
+      empowermentImpact: liberationImpact,
       communityBenefit,
       sovereigntyCompliance: sovereigntyViolations.length === 0,
       recommendations: this.generateEmpowermentRecommendations(tracking, liberationValidation),
