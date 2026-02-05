@@ -309,40 +309,60 @@ router.post('/', async (req, res) => {
  */
 router.get('/health', async (_req, res) => {
   try {
-    // Check Mozilla TTS availability (test with short text)
-    let ttsHealthy = false;
-    let ttsError = '';
+    // Check Chatterbox availability
+    let chatterboxHealthy = false;
+    let chatterboxError = '';
+
+    try {
+      const chatterboxCheck = await fetch(`${CHATTERBOX_URL}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000)
+      });
+      chatterboxHealthy = chatterboxCheck.ok;
+      if (!chatterboxCheck.ok) {
+        chatterboxError = `HTTP ${chatterboxCheck.status}`;
+      }
+    } catch (e: any) {
+      chatterboxError = e.message || 'Connection failed';
+    }
+
+    // Check Mozilla TTS availability (fallback)
+    let mozillaHealthy = false;
+    let mozillaError = '';
 
     try {
       const ttsCheck = await fetch(`${MELOTTS_URL}/api/tts?text=test`, {
         method: 'GET',
         signal: AbortSignal.timeout(10000)
       });
-      ttsHealthy = ttsCheck.ok;
+      mozillaHealthy = ttsCheck.ok;
       if (!ttsCheck.ok) {
-        ttsError = `HTTP ${ttsCheck.status}`;
+        mozillaError = `HTTP ${ttsCheck.status}`;
       }
     } catch (e: any) {
-      ttsError = e.message || 'Connection failed';
+      mozillaError = e.message || 'Connection failed';
     }
 
     return res.status(200).json({
       success: true,
       service: 'ivor-voice',
-      tts: {
-        engine: 'Mozilla TTS (synesthesiam/mozilla-tts)',
+      chatterbox: {
+        url: CHATTERBOX_URL,
+        healthy: chatterboxHealthy,
+        error: chatterboxError || undefined,
+        gielgudLoaded: !!gielgudRefBuffer,
+        gielgudPath: GIELGUD_REF_PATH,
+        gielgudSize: gielgudRefBuffer ? `${Math.round(gielgudRefBuffer.length / 1024)}KB` : null
+      },
+      mozillaTts: {
         url: MELOTTS_URL,
-        healthy: ttsHealthy,
-        error: ttsError || undefined
+        healthy: mozillaHealthy,
+        error: mozillaError || undefined
       },
       supabase: {
         configured: !!getSupabaseClient()
       },
-      features: {
-        accent: 'English',
-        caching: 'Supabase Storage (7-day retention)',
-        cost: '$0/month (self-hosted)'
-      },
+      voiceCloning: gielgudRefBuffer ? 'enabled (Gielgud)' : 'disabled (using default voice)',
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
