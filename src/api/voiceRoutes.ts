@@ -19,8 +19,9 @@ const CHATTERBOX_EMOTION = parseFloat(process.env.CHATTERBOX_EMOTION || '0.6');
 const MELOTTS_URL = process.env.MELOTTS_URL || process.env.TTS_URL || 'http://tts.blkoutuk.cloud';
 
 // Gielgud voice reference for Chatterbox voice cloning
-// The reference audio is served at /public/gielgud4AIvor.mp3
-const GIELGUD_REF_PATH = path.join(process.cwd(), 'public', 'gielgud4AIvor.mp3');
+// In production (Docker): /app/voices/gielgud30.mp3
+// In local dev: public/gielgud4AIvor.mp3
+const GIELGUD_REF_PATH = process.env.GIELGUD_VOICE_PATH || '/app/voices/gielgud30.mp3';
 const IVOR_BASE_URL = process.env.IVOR_PUBLIC_URL || 'https://ivor.blkoutuk.cloud';
 const GIELGUD_REF_URL = `${IVOR_BASE_URL}/public/gielgud4AIvor.mp3`;
 
