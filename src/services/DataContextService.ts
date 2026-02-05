@@ -44,11 +44,12 @@ export class DataContextService {
     }
 
     const hint = this.detectTopicHint(message, topic)
+    const dateRange = this.extractDateRange(message)
 
     try {
       // Fetch data in parallel, scoped by topic relevance
       const [events, news, learning, groups, shop] = await Promise.all([
-        this.shouldFetch(hint, 'events') ? this.getUpcomingEvents(hint === 'events' ? 10 : 5, location) : Promise.resolve(''),
+        this.shouldFetch(hint, 'events') ? this.getUpcomingEvents(hint === 'events' ? 25 : 5, location, dateRange) : Promise.resolve(''),
         this.shouldFetch(hint, 'news') ? this.getRecentNews(hint === 'news' ? 5 : 3) : Promise.resolve(''),
         this.shouldFetch(hint, 'learning') ? this.getLearningModules(hint === 'learning' ? 10 : 3) : Promise.resolve(''),
         this.shouldFetch(hint, 'groups') ? this.getCommunityGroups(hint === 'groups' ? 10 : 3, location) : Promise.resolve(''),
@@ -66,7 +67,7 @@ export class DataContextService {
 
   // --- Individual query methods ---
 
-  private async getUpcomingEvents(limit: number, location?: string): Promise<string> {
+  private async getUpcomingEvents(limit: number, location?: string, dateRange?: { from: string, to: string } | null): Promise<string> {
     try {
       const today = new Date().toISOString().split('T')[0]
 
@@ -74,9 +75,14 @@ export class DataContextService {
         .from('events')
         .select('title, date, start_time, end_time, location, organizer, description, cost, url, tags')
         .eq('status', 'approved')
-        .gte('date', today)
+        .gte('date', dateRange?.from || today)
         .order('date', { ascending: true })
         .limit(limit)
+
+      // If the user asked about a specific date/period, also cap the end date
+      if (dateRange?.to) {
+        query = query.lte('date', dateRange.to)
+      }
 
       if (location && location !== 'unknown') {
         query = query.ilike('location', `%${location}%`)
@@ -223,13 +229,77 @@ export class DataContextService {
   // --- Helpers ---
 
   /**
+   * Extract a date range from the user's message for targeted event queries.
+   * Returns { from, to } ISO date strings, or null if no date reference found.
+   */
+  private extractDateRange(message: string): { from: string, to: string } | null {
+    const lower = (message || '').toLowerCase()
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+    const toISO = (d: Date) => d.toISOString().split('T')[0]
+
+    // "valentine's day" / "valentines" / "feb 14" / "14th feb"
+    if (/valentine|feb(?:ruary)?\s*14|14(?:th)?\s*(?:of\s+)?feb/i.test(lower)) {
+      const year = now.getMonth() > 1 ? now.getFullYear() + 1 : now.getFullYear()
+      const vday = new Date(year, 1, 14)
+      return { from: toISO(vday), to: toISO(vday) }
+    }
+
+    // "this weekend"
+    if (/this\s+weekend/.test(lower)) {
+      const dayOfWeek = today.getDay()
+      const daysUntilSat = (6 - dayOfWeek + 7) % 7 || (dayOfWeek === 0 ? 6 : 0)
+      const sat = new Date(today)
+      sat.setDate(today.getDate() + daysUntilSat)
+      // If it's already Saturday or Sunday, use today as start
+      const from = dayOfWeek === 0 || dayOfWeek === 6 ? today : sat
+      const sun = new Date(sat)
+      sun.setDate(sat.getDate() + 1)
+      return { from: toISO(from), to: toISO(sun) }
+    }
+
+    // "next weekend"
+    if (/next\s+weekend/.test(lower)) {
+      const dayOfWeek = today.getDay()
+      const daysUntilNextSat = ((6 - dayOfWeek + 7) % 7) + 7
+      const sat = new Date(today)
+      sat.setDate(today.getDate() + (dayOfWeek === 6 ? 7 : daysUntilNextSat))
+      const sun = new Date(sat)
+      sun.setDate(sat.getDate() + 1)
+      return { from: toISO(sat), to: toISO(sun) }
+    }
+
+    // "next week"
+    if (/next\s+week/.test(lower)) {
+      const dayOfWeek = today.getDay()
+      const daysUntilMon = ((1 - dayOfWeek + 7) % 7) + 7
+      const mon = new Date(today)
+      mon.setDate(today.getDate() + (dayOfWeek === 1 ? 7 : daysUntilMon))
+      const sun = new Date(mon)
+      sun.setDate(mon.getDate() + 6)
+      return { from: toISO(mon), to: toISO(sun) }
+    }
+
+    // "this week"
+    if (/this\s+week/.test(lower)) {
+      const dayOfWeek = today.getDay()
+      const sun = new Date(today)
+      sun.setDate(today.getDate() + (7 - dayOfWeek))
+      return { from: toISO(today), to: toISO(sun) }
+    }
+
+    return null
+  }
+
+  /**
    * Detect which data categories are most relevant to the user's message.
    */
   private detectTopicHint(message: string, topic?: string): TopicHint {
     const lower = (message || '').toLowerCase()
 
-    // Events
-    if (/\b(event|what'?s on|this weekend|calendar|gig|party|night out|social|meetup|gathering)\b/.test(lower)) return 'events'
+    // Events (including date references that imply event queries)
+    if (/\b(event|what'?s on|this weekend|next weekend|this week|next week|calendar|gig|party|night out|social|meetup|gathering|valentine|friday|saturday|sunday|dance|rave|club night)\b/.test(lower)) return 'events'
 
     // News
     if (/\b(news|what'?s happening|article|headline|update|announcement|latest)\b/.test(lower)) return 'news'
@@ -295,7 +365,7 @@ export class DataContextService {
 
 ${sections.join('\n\n')}
 
-Use this data to give specific, real answers. If the user asks about events, reference actual events above. If they ask about learning, suggest actual modules. Always cite real information rather than saying "check the website."`
+IMPORTANT: Use this data to give specific, real answers. Reference actual events, modules, and groups listed above — never say "check the website" or "visit blkoutuk.com" when you have real data right here. The user is ALREADY ON blkoutuk.com talking to you. If they want to browse events, tell them to click the Events tab on this site. If they want news, tell them to check the News section. Never send them away from where they already are.`
   }
 }
 
