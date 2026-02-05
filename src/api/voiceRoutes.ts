@@ -24,12 +24,12 @@ const GIELGUD_REF_PATH = path.join(process.cwd(), 'public', 'gielgud4AIvor.mp3')
 const IVOR_BASE_URL = process.env.IVOR_PUBLIC_URL || 'https://ivor.blkoutuk.cloud';
 const GIELGUD_REF_URL = `${IVOR_BASE_URL}/public/gielgud4AIvor.mp3`;
 
-// Load reference audio as base64 for inline voice cloning (fallback if URL not reachable)
-let gielgudRefBase64: string | null = null;
+// Load reference audio as Buffer for multipart voice cloning via /v1/audio/speech/upload
+let gielgudRefBuffer: Buffer | null = null;
 try {
   if (fs.existsSync(GIELGUD_REF_PATH)) {
-    gielgudRefBase64 = fs.readFileSync(GIELGUD_REF_PATH).toString('base64');
-    console.log(`[Voice] Loaded Gielgud reference audio (${Math.round(fs.statSync(GIELGUD_REF_PATH).size / 1024)}KB)`);
+    gielgudRefBuffer = fs.readFileSync(GIELGUD_REF_PATH);
+    console.log(`[Voice] Loaded Gielgud reference audio (${Math.round(gielgudRefBuffer.length / 1024)}KB)`);
   } else {
     console.warn(`[Voice] Gielgud reference audio not found at ${GIELGUD_REF_PATH}`);
   }
@@ -127,46 +127,76 @@ router.post('/', async (req, res) => {
     let ttsResponse: Response | null = null;
     let ttsSource: string = 'unknown';
 
-    // 1. Chatterbox TTS (primary) — OpenAI-compatible /v1/audio/speech
-    //    Uses Gielgud reference audio for voice cloning
+    // 1. Chatterbox TTS (primary)
+    //    Uses /v1/audio/speech/upload with Gielgud voice_file for voice cloning
+    //    Falls back to /v1/audio/speech (default voice) if no reference audio loaded
     try {
-      console.log(`[Voice] Trying Chatterbox TTS at ${CHATTERBOX_URL} with Gielgud voice`);
+      if (gielgudRefBuffer) {
+        // Use multipart upload endpoint with Gielgud voice file for cloning
+        console.log(`[Voice] Trying Chatterbox TTS at ${CHATTERBOX_URL}/v1/audio/speech/upload with Gielgud voice`);
 
-      // Build request body with reference audio for voice cloning
-      const chatterboxBody: Record<string, any> = {
-        input: text,
-        model: 'chatterbox',
-        response_format: 'mp3',
-        exaggeration: CHATTERBOX_EMOTION,  // 0.0 = monotone, 1.0 = theatrical
-      };
+        const boundary = `----VoiceBoundary${Date.now()}`;
+        const parts: Buffer[] = [];
 
-      // Pass reference audio for Gielgud voice cloning
-      if (gielgudRefBase64) {
-        // Inline base64 reference audio (most compatible)
-        chatterboxBody.voice = gielgudRefBase64;
-        chatterboxBody.voice_format = 'mp3';
-        chatterboxBody.reference_audio = gielgudRefBase64;
-        chatterboxBody.audio_prompt = gielgudRefBase64;
-      } else {
-        // URL-based reference (requires Chatterbox to fetch it)
-        chatterboxBody.voice = GIELGUD_REF_URL;
-        chatterboxBody.reference_audio_url = GIELGUD_REF_URL;
+        // Add text input field
+        parts.push(Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="input"\r\n\r\n${text}\r\n`
+        ));
+
+        // Add exaggeration field
+        parts.push(Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="exaggeration"\r\n\r\n${CHATTERBOX_EMOTION}\r\n`
+        ));
+
+        // Add voice_file (Gielgud reference audio)
+        parts.push(Buffer.from(
+          `--${boundary}\r\nContent-Disposition: form-data; name="voice_file"; filename="gielgud4AIvor.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n`
+        ));
+        parts.push(gielgudRefBuffer);
+        parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+
+        const multipartBody = Buffer.concat(parts);
+
+        const chatterboxResponse = await fetch(`${CHATTERBOX_URL}/v1/audio/speech/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+          body: multipartBody,
+          signal: AbortSignal.timeout(45000),
+        });
+
+        if (chatterboxResponse.ok) {
+          ttsResponse = chatterboxResponse;
+          ttsSource = 'chatterbox-gielgud';
+          console.log(`[Voice] Chatterbox TTS success with Gielgud voice cloning`);
+        } else {
+          const errText = await chatterboxResponse.text().catch(() => '');
+          console.log(`[Voice] Chatterbox upload returned ${chatterboxResponse.status}: ${errText.substring(0, 200)}, trying JSON endpoint`);
+        }
       }
 
-      const chatterboxResponse = await fetch(`${CHATTERBOX_URL}/v1/audio/speech`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(chatterboxBody),
-        signal: AbortSignal.timeout(30000),
-      });
+      // Fallback: JSON endpoint (uses server default voice — not Gielgud)
+      if (!ttsResponse) {
+        console.log(`[Voice] Trying Chatterbox TTS at ${CHATTERBOX_URL}/v1/audio/speech (default voice)`);
 
-      if (chatterboxResponse.ok) {
-        ttsResponse = chatterboxResponse;
-        ttsSource = 'chatterbox-gielgud';
-        console.log(`[Voice] Chatterbox TTS success with Gielgud voice`);
-      } else {
-        const errText = await chatterboxResponse.text().catch(() => '');
-        console.log(`[Voice] Chatterbox returned ${chatterboxResponse.status}: ${errText.substring(0, 200)}, trying fallback`);
+        const chatterboxResponse = await fetch(`${CHATTERBOX_URL}/v1/audio/speech`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: text,
+            model: 'chatterbox',
+            exaggeration: CHATTERBOX_EMOTION,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+
+        if (chatterboxResponse.ok) {
+          ttsResponse = chatterboxResponse;
+          ttsSource = 'chatterbox-default';
+          console.log(`[Voice] Chatterbox TTS success (default voice, not Gielgud)`);
+        } else {
+          const errText = await chatterboxResponse.text().catch(() => '');
+          console.log(`[Voice] Chatterbox returned ${chatterboxResponse.status}: ${errText.substring(0, 200)}, trying Mozilla fallback`);
+        }
       }
     } catch (e) {
       console.log(`[Voice] Chatterbox unavailable: ${e}`);
