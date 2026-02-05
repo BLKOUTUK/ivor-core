@@ -13,7 +13,7 @@ import { getSupabaseClient } from '../lib/supabaseClient.js';
 const router = express.Router();
 
 // Chatterbox TTS (primary) — OpenAI-compatible API
-const CHATTERBOX_URL = process.env.CHATTERBOX_URL || 'http://chatterbox.blkoutuk.cloud';
+const CHATTERBOX_URL = process.env.CHATTERBOX_URL || 'https://chatterbox.blkoutuk.cloud';
 const CHATTERBOX_EMOTION = parseFloat(process.env.CHATTERBOX_EMOTION || '0.6');
 // Legacy Mozilla TTS fallback
 const MELOTTS_URL = process.env.MELOTTS_URL || process.env.TTS_URL || 'http://tts.blkoutuk.cloud';
