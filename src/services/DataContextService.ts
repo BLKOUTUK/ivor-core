@@ -71,11 +71,11 @@ export class DataContextService {
       const today = new Date().toISOString().split('T')[0]
 
       let query = this.supabase!
-        .from('community_events')
-        .select('title, event_date, event_time, location, organizer_name, description, price')
-        .eq('approval_status', 'approved')
-        .gte('event_date', today)
-        .order('event_date', { ascending: true })
+        .from('events')
+        .select('title, date, start_time, end_time, location, organizer, description, cost, url, tags')
+        .eq('status', 'approved')
+        .gte('date', today)
+        .order('date', { ascending: true })
         .limit(limit)
 
       if (location && location !== 'unknown') {
@@ -90,12 +90,13 @@ export class DataContextService {
       }
 
       return data.map(e => {
-        const date = e.event_date ? new Date(e.event_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : 'TBC'
-        const time = e.event_time ? ` at ${e.event_time}` : ''
+        const date = e.date ? new Date(e.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'TBC'
+        const time = e.start_time ? ` at ${e.start_time}` : ''
         const loc = e.location ? ` — ${e.location}` : ''
-        const org = e.organizer_name ? ` (${e.organizer_name})` : ''
-        const price = e.price ? ` [${e.price}]` : ''
-        return `- ${e.title} — ${date}${time}${loc}${org}${price}`
+        const org = e.organizer ? ` (${e.organizer})` : ''
+        const cost = e.cost ? ` [${e.cost}]` : ' [Free]'
+        const link = e.url ? ` | ${e.url}` : ''
+        return `- ${e.title} — ${date}${time}${loc}${org}${cost}${link}`
       }).join('\n')
     } catch (error) {
       console.warn('[DataContext] Events fetch failed:', error)
