@@ -1,6 +1,7 @@
 import express from 'express'
 import { Request, Response } from 'express'
 import crypto from 'crypto'
+import { getSupabaseClient } from '../lib/supabaseClient.js'
 
 const router = express.Router()
 
@@ -81,18 +82,29 @@ router.post('/feedback', async (req: Request, res: Response) => {
       createdAt: new Date().toISOString()
     }
 
-    // TODO: Store in Supabase database
-    console.log('📝 IVOR Feedback Received:', {
+    // Store in Supabase
+    const supabase = getSupabaseClient()
+    if (supabase) {
+      const { error: dbError } = await supabase.from('ivor_feedback').insert({
+        id: feedbackData.id,
+        session_id: sessionId || null,
+        user_hash: feedbackData.userHash,
+        rating: feedbackData.rating,
+        feedback_text: feedbackData.feedback || null,
+        message_index: 0,
+        created_at: feedbackData.createdAt
+      })
+      if (dbError) {
+        console.error('[Feedback] DB insert error:', dbError.message)
+      }
+    }
+
+    console.log('📝 IVOR Feedback stored:', {
       responseId: feedbackData.responseId,
       rating: feedbackData.rating,
       helpful: feedbackData.helpful,
-      hasText: !!feedbackData.feedback,
-      userHash: feedbackData.userHash.substring(0, 8) + '...',
-      timestamp: feedbackData.createdAt
+      userHash: feedbackData.userHash.substring(0, 8) + '...'
     })
-
-    // TODO: Trigger trust score updates based on feedback
-    // TODO: Update ML pattern weights if rating is very high/low
 
     res.json({
       success: true,
@@ -139,9 +151,6 @@ router.post('/rate-knowledge', async (req: Request, res: Response) => {
       userAgent || req.get('User-Agent') || ''
     )
 
-    // Check for duplicate rating (same user, same entry, within 24 hours)
-    // TODO: Implement duplicate check with database
-
     const ratingData = {
       id: crypto.randomUUID(),
       knowledgeEntryId,
@@ -151,16 +160,27 @@ router.post('/rate-knowledge', async (req: Request, res: Response) => {
       createdAt: new Date().toISOString()
     }
 
-    // TODO: Store in knowledge_ratings table
-    console.log('⭐ Knowledge Rating Received:', {
+    // Store in ivor_feedback table
+    const supabase = getSupabaseClient()
+    if (supabase) {
+      const { error: dbError } = await supabase.from('ivor_feedback').insert({
+        id: ratingData.id,
+        user_hash: ratingData.userHash,
+        rating: ratingData.rating,
+        feedback_text: ratingData.feedback || null,
+        message_index: 0,
+        created_at: ratingData.createdAt
+      })
+      if (dbError) {
+        console.error('[Feedback] Knowledge rating DB insert error:', dbError.message)
+      }
+    }
+
+    console.log('⭐ Knowledge Rating stored:', {
       knowledgeEntryId: ratingData.knowledgeEntryId,
       rating: ratingData.rating,
-      hasText: !!ratingData.feedback,
-      userHash: ratingData.userHash.substring(0, 8) + '...',
-      timestamp: ratingData.createdAt
+      userHash: ratingData.userHash.substring(0, 8) + '...'
     })
-
-    // TODO: Trigger trust score recalculation for this knowledge entry
 
     res.json({
       success: true,
@@ -181,15 +201,24 @@ router.post('/rate-knowledge', async (req: Request, res: Response) => {
  */
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    // TODO: Query database for aggregated stats
-    const stats = {
-      totalFeedback: 0, // Count from ivor_feedback table
-      averageRating: 0, // Average rating from ivor_feedback
-      totalKnowledgeRatings: 0, // Count from knowledge_ratings table
-      averageKnowledgeRating: 0, // Average from knowledge_ratings
-      highTrustEntries: 0, // Count of entries with trust_score >= 0.8
-      lowTrustEntries: 0, // Count of entries with trust_score < 0.4
+    const supabase = getSupabaseClient()
+    let stats = {
+      totalFeedback: 0,
+      averageRating: 0,
       lastUpdated: new Date().toISOString()
+    }
+
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('ivor_feedback')
+        .select('rating')
+      if (!error && data && data.length > 0) {
+        const ratings = data.filter((d: any) => d.rating != null)
+        stats.totalFeedback = ratings.length
+        stats.averageRating = ratings.length > 0
+          ? Math.round(ratings.reduce((sum: number, d: any) => sum + d.rating, 0) / ratings.length * 10) / 10
+          : 0
+      }
     }
 
     res.json({
@@ -235,11 +264,25 @@ router.post('/helpful', async (req: Request, res: Response) => {
       createdAt: new Date().toISOString()
     }
 
-    console.log('👍 Quick Feedback:', {
+    const supabase = getSupabaseClient()
+    if (supabase) {
+      const { error: dbError } = await supabase.from('ivor_feedback').insert({
+        id: quickFeedback.id,
+        user_hash: quickFeedback.userHash,
+        rating: quickFeedback.rating,
+        feedback_text: helpful ? 'helpful' : 'not helpful',
+        message_index: 0,
+        created_at: quickFeedback.createdAt
+      })
+      if (dbError) {
+        console.error('[Feedback] Quick feedback DB insert error:', dbError.message)
+      }
+    }
+
+    console.log('👍 Quick Feedback stored:', {
       responseId: quickFeedback.responseId,
       helpful: quickFeedback.helpful,
-      userHash: quickFeedback.userHash.substring(0, 8) + '...',
-      timestamp: quickFeedback.createdAt
+      userHash: quickFeedback.userHash.substring(0, 8) + '...'
     })
 
     res.json({

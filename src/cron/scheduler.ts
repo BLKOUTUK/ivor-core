@@ -361,7 +361,7 @@ async function runFeedbackLoop() {
     // Get recent content performance data
     const { data: perfData, error: perfError } = await supabase
       .from('content_performance')
-      .select('*')
+      .select('id, content_calendar_id, engagement_rate')
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
 
     if (perfError || !perfData || perfData.length === 0) {
@@ -371,20 +371,56 @@ async function runFeedbackLoop() {
 
     console.log(`[CRON] Processing ${perfData.length} performance records`)
 
+    // Batch content IDs by performance tier
+    const boostIds: string[] = []
+    const reduceIds: string[] = []
+
+    for (const record of perfData) {
+      const rate = parseFloat(record.engagement_rate) || 0
+      if (rate > 0.4) {
+        boostIds.push(record.content_calendar_id)
+      } else if (rate < 0.1) {
+        reduceIds.push(record.content_calendar_id)
+      }
+    }
+
+    let boosted = 0
+    let reduced = 0
+
+    if (boostIds.length > 0) {
+      const { error } = await supabase.rpc('boost_content_relevance', {
+        p_content_ids: boostIds,
+        p_boost_amount: 0.1
+      })
+      if (!error) boosted = boostIds.length
+      else console.error('[CRON] Boost RPC error:', error.message)
+    }
+
+    if (reduceIds.length > 0) {
+      const { error } = await supabase.rpc('reduce_content_relevance', {
+        p_content_ids: reduceIds,
+        p_reduction_amount: 0.05
+      })
+      if (!error) reduced = reduceIds.length
+      else console.error('[CRON] Reduce RPC error:', error.message)
+    }
+
     // Log the feedback loop cycle
     await supabase.from('feedback_loop_events').insert({
       event_type: 'performance_milestone',
       source_table: 'feedback_loop_cycle',
       source_id: crypto.randomUUID(),
-      change_reason: `Feedback loop processed ${perfData.length} records`,
+      change_reason: `Feedback loop: ${boosted} boosted, ${reduced} reduced out of ${perfData.length} records`,
       triggered_by: 'cron_scheduler',
       metadata: {
         processed_at: new Date().toISOString(),
-        records_processed: perfData.length
+        records_processed: perfData.length,
+        boosted,
+        reduced
       }
     })
 
-    console.log('[CRON] Feedback loop cycle logged')
+    console.log(`[CRON] Feedback loop complete: ${boosted} boosted, ${reduced} reduced`)
   } catch (err) {
     console.error('[CRON] Feedback loop failed:', err)
   }
