@@ -26,13 +26,15 @@ import analyticsRoutes from './api/analyticsRoutes.js'
 import learningRoutes from './api/learning.js'
 import voiceRoutes from './api/voiceRoutes.js'
 import intelligenceRoutes from './api/intelligenceRoutes.js'
-// Temporarily disabled - need Stripe credentials
-// import shopRoutes from './api/shopRoutes.js'
-// import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
-// import checkoutRoutes from './api/checkoutRoutes.js'
+import shopRoutes from './api/shopRoutes.js'
+import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
+import checkoutRoutes from './api/checkoutRoutes.js'
 
 // Conversation Intelligence Service (Self-Improving System)
 import conversationIntelligenceService from './services/ConversationIntelligenceService.js'
+
+// Scheduled Tasks (replaces n8n)
+import { initializeScheduler } from './cron/scheduler.js'
 
 // Layer 3 Liberation Business Logic
 import {
@@ -86,8 +88,7 @@ app.use(cors({
 }))
 
 // IMPORTANT: Stripe webhook MUST use raw body parsing BEFORE express.json()
-// Temporarily disabled - need Stripe credentials
-// app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRoutes)
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRoutes)
 
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
@@ -117,9 +118,8 @@ app.use('/api/groups', groupsRoutes)      // Community groups API
 app.use('/api/analytics', analyticsRoutes)  // Analytics dashboard & metrics API
 app.use('/api/voice', voiceRoutes)          // Voice synthesis (MeloTTS) API
 app.use('/api/intelligence', intelligenceRoutes)  // Conversation intelligence & community insights API
-// Temporarily disabled - need Stripe credentials configured
-// app.use('/api/shop', shopRoutes)           // Shop & marketplace API
-// app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
+app.use('/api/shop', shopRoutes)           // Shop & marketplace API
+app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
 
 // Health check
 app.get('/health', (req, res) => {
@@ -221,6 +221,7 @@ app.get('/health/liberation', async (req, res) => {
 
 // Core AI Chat endpoint with Liberation Layer 3 Integration + Conversation Intelligence
 app.post('/api/chat', async (req, res) => {
+  (req as any)._startTime = Date.now()
   try {
     const { message, sessionId, userContext } = req.body
     const currentSessionId = sessionId || `session-${Date.now()}`
@@ -299,6 +300,26 @@ app.post('/api/chat', async (req, res) => {
       content: journeyResponse.response,
       timestamp: new Date()
     })
+
+    // Persist conversation to ivor_feedback table (non-blocking)
+    const supabaseForFeedback = getSupabaseClient()
+    if (supabaseForFeedback) {
+      const userHash = require('crypto').createHash('sha256')
+        .update((userContext?.userId || req.ip || 'anonymous') + (req.headers['user-agent'] || ''))
+        .digest('hex').substring(0, 16)
+
+      supabaseForFeedback.from('ivor_feedback').insert({
+        session_id: currentSessionId,
+        user_hash: userHash,
+        user_input: message.substring(0, 2000),
+        ivor_response: journeyResponse.response.substring(0, 5000),
+        journey_stage: journeyResponse.journeyContext?.stage || 'general',
+        resources_provided: journeyResponse.resourcesProvided || [],
+        response_time_ms: Date.now() - (req as any)._startTime || null,
+      }).then(({ error: fbError }) => {
+        if (fbError) console.error('[Feedback] Insert failed:', fbError.message)
+      })
+    }
 
     // Track resources recommended (if any)
     if (journeyResponse.resourcesProvided && journeyResponse.resourcesProvided.length > 0) {
@@ -908,6 +929,9 @@ async function initializeAndStart() {
   console.log(`   ├── AI Theme Extraction: ${conversationIntelligenceService.isAIExtractEnabled() ? '✅ GROQ' : '⚠️ KEYWORD-BASED'}`)
   console.log(`   └── Community Insights: ${conversationIntelligenceService.isInitialized() ? 'AVAILABLE' : 'LIMITED'}`)
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  // Initialize scheduled tasks (replaces n8n automations)
+  initializeScheduler()
 
   // Start Express server
   app.listen(PORT, () => {
