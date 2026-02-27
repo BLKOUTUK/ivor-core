@@ -5,6 +5,7 @@
  */
 import cron from 'node-cron'
 import { getSupabaseClient } from '../lib/supabaseClient.js'
+import { CouncilService } from '../services/CouncilService.js'
 
 /**
  * Initialize all scheduled tasks
@@ -93,7 +94,24 @@ export function initializeScheduler() {
       console.error('[CRON] Feedback loop cycle failed:', error)
     }
   })
-  console.log('   └── Feedback Loop: weekly Monday 4am UTC')
+  console.log('   ├── Feedback Loop: weekly Monday 4am UTC')
+
+  // 8. LLM Council — weekly Wednesday at 10am UTC (after intelligence has refreshed)
+  cron.schedule('0 10 * * 3', async () => {
+    console.log('[CRON] Convening LLM Council for newsletter curation...')
+    try {
+      const council = new CouncilService()
+      const verdict = await council.convene('newsletter', 'cron')
+      if (verdict) {
+        console.log(`[CRON] Council complete — liberation score: ${verdict.liberationScore}`)
+      } else {
+        console.log('[CRON] Council returned no verdict')
+      }
+    } catch (error) {
+      console.error('[CRON] Council session failed:', error)
+    }
+  })
+  console.log('   └── LLM Council: weekly Wednesday 10am UTC')
 
   console.log('')
 }

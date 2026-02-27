@@ -29,6 +29,7 @@ import intelligenceRoutes from './api/intelligenceRoutes.js'
 import shopRoutes from './api/shopRoutes.js'
 import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
 import checkoutRoutes from './api/checkoutRoutes.js'
+import councilRoutes from './api/councilRoutes.js'
 
 // Conversation Intelligence Service (Self-Improving System)
 import conversationIntelligenceService from './services/ConversationIntelligenceService.js'
@@ -120,6 +121,7 @@ app.use('/api/voice', voiceRoutes)          // Voice synthesis (MeloTTS) API
 app.use('/api/intelligence', intelligenceRoutes)  // Conversation intelligence & community insights API
 app.use('/api/shop', shopRoutes)           // Shop & marketplace API
 app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
+app.use('/api/council', councilRoutes)     // LLM Council & compliance API
 
 // Health check
 app.get('/health', (req, res) => {
