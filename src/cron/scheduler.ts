@@ -6,6 +6,7 @@
 import cron from 'node-cron'
 import { getSupabaseClient } from '../lib/supabaseClient.js'
 import { CouncilService } from '../services/CouncilService.js'
+import campaignTrackingService from '../services/CampaignTrackingService.js'
 
 /**
  * Initialize all scheduled tasks
@@ -111,7 +112,19 @@ export function initializeScheduler() {
       console.error('[CRON] Council session failed:', error)
     }
   })
-  console.log('   └── LLM Council: weekly Wednesday 10am UTC')
+  console.log('   ├── LLM Council: weekly Wednesday 10am UTC')
+
+  // 9. Campaign health snapshot — weekly Monday at 5am UTC (after feedback loop at 4am)
+  cron.schedule('0 5 * * 1', async () => {
+    console.log('[CRON] Running campaign health snapshot...')
+    try {
+      await campaignTrackingService.snapshotHealth()
+      console.log('[CRON] Campaign health snapshot complete')
+    } catch (error) {
+      console.error('[CRON] Campaign health snapshot failed:', error)
+    }
+  })
+  console.log('   └── Campaign Health Snapshot: weekly Monday 5am UTC')
 
   console.log('')
 }

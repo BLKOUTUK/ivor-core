@@ -30,6 +30,8 @@ import shopRoutes from './api/shopRoutes.js'
 import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
 import checkoutRoutes from './api/checkoutRoutes.js'
 import councilRoutes from './api/councilRoutes.js'
+import campaignRoutes from './api/campaignRoutes.js'
+import campaignTrackingService from './services/CampaignTrackingService.js'
 
 // Conversation Intelligence Service (Self-Improving System)
 import conversationIntelligenceService from './services/ConversationIntelligenceService.js'
@@ -122,6 +124,7 @@ app.use('/api/intelligence', intelligenceRoutes)  // Conversation intelligence &
 app.use('/api/shop', shopRoutes)           // Shop & marketplace API
 app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
 app.use('/api/council', councilRoutes)     // LLM Council & compliance API
+app.use('/api/campaign', campaignRoutes)   // Campaign tracking & health API
 
 // Health check
 app.get('/health', (req, res) => {
@@ -322,6 +325,19 @@ app.post('/api/chat', async (req, res) => {
         if (fbError) console.error('[Feedback] Insert failed:', fbError.message)
       })
     }
+
+    // Campaign tracking — classify feature usage and persist metrics (non-blocking)
+    campaignTrackingService.trackConversation({
+      sessionId: currentSessionId,
+      userHash: supabaseForFeedback ? require('crypto').createHash('sha256')
+        .update((userContext?.userId || req.ip || 'anonymous') + (req.headers['user-agent'] || ''))
+        .digest('hex').substring(0, 16) : undefined,
+      message,
+      utmSource: userContext?.utmSource || req.query.utm_source as string,
+      utmMedium: userContext?.utmMedium || req.query.utm_medium as string,
+      utmCampaign: userContext?.utmCampaign || req.query.utm_campaign as string,
+      utmContent: userContext?.utmContent || req.query.utm_content as string,
+    }).catch(err => console.error('[CampaignTracking] Error:', err))
 
     // Track resources recommended (if any)
     if (journeyResponse.resourcesProvided && journeyResponse.resourcesProvided.length > 0) {
