@@ -31,6 +31,8 @@ import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
 import checkoutRoutes from './api/checkoutRoutes.js'
 import councilRoutes from './api/councilRoutes.js'
 import campaignRoutes from './api/campaignRoutes.js'
+import interviewRoutes from './api/interviewRoutes.js'
+import panelImageRoutes from './api/panelImageRoutes.js'
 import campaignTrackingService from './services/CampaignTrackingService.js'
 
 // Conversation Intelligence Service (Self-Improving System)
@@ -84,7 +86,8 @@ app.use(cors({
         'https://news.blkoutuk.cloud',
         'https://events.blkoutuk.cloud',
         'https://comms.blkoutuk.cloud',
-        'https://movement.blkoutuk.cloud'
+        'https://movement.blkoutuk.cloud',
+        'https://compass.blkoutuk.cloud'
       ]
     : ['http://localhost:5181', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true
@@ -125,6 +128,8 @@ app.use('/api/shop', shopRoutes)           // Shop & marketplace API
 app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
 app.use('/api/council', councilRoutes)     // LLM Council & compliance API
 app.use('/api/campaign', campaignRoutes)   // Campaign tracking & health API
+app.use('/api/interview', interviewRoutes)  // Ivor's Compass interview challenge API
+app.use('/api/interview', panelImageRoutes)  // Ivor's Compass panel image generation
 
 // Health check
 app.get('/health', (req, res) => {
