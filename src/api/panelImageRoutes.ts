@@ -3,7 +3,7 @@ import { Router, type Request, type Response } from 'express'
 const router = Router()
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent'
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent'
 
 /**
  * POST /api/interview/generate-panel
@@ -67,8 +67,7 @@ Style requirements:
           }]
         }],
         generationConfig: {
-          responseModalities: ['IMAGE', 'TEXT'],
-          imageSizeOptions: { aspectRatio: '16:9' },
+          responseModalities: ['TEXT', 'IMAGE'],
         }
       })
     })
