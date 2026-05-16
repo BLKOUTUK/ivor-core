@@ -319,6 +319,7 @@ app.post('/api/chat', async (req, res) => {
         .digest('hex').substring(0, 16)
 
       supabaseForFeedback.from('ivor_feedback').insert({
+        message_index: 0, // one row per exchange — ordering is via created_at + session_id
         session_id: currentSessionId,
         user_hash: userHash,
         user_input: message.substring(0, 2000),
