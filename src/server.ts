@@ -77,17 +77,32 @@ let layer3InitializationError: Error | null = null
 
 // Middleware
 app.use(helmet())
+// CORS allowlist. Public domains live on .com (per feedback_public_domains.md);
+// .cloud entries kept for back-compat with anything still pointing there. The
+// apps moved to .com but this list lagged, which broke the news moderation
+// dashboard with "Failed to fetch" because the response had no
+// Access-Control-Allow-Origin header for news.blkoutuk.com.
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [
         'https://ivor.blkoutuk.cloud',
         'https://blkoutuk.com',
         'https://www.blkoutuk.com',
+        // Public .com domains (canonical)
+        'https://news.blkoutuk.com',
+        'https://events.blkoutuk.com',
+        'https://comms.blkoutuk.com',
+        'https://movement.blkoutuk.com',
+        'https://compass.blkoutuk.com',
+        'https://voices.blkoutuk.com',
+        'https://critical.blkoutuk.com',
+        // .cloud variants — back-compat + infrastructure surfaces
         'https://news.blkoutuk.cloud',
         'https://events.blkoutuk.cloud',
         'https://comms.blkoutuk.cloud',
         'https://movement.blkoutuk.cloud',
-        'https://compass.blkoutuk.cloud'
+        'https://compass.blkoutuk.cloud',
+        'https://voices.blkoutuk.cloud'
       ]
     : ['http://localhost:5181', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true
