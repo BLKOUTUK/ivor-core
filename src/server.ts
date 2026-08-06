@@ -92,7 +92,6 @@ app.use(cors({
         'https://news.blkoutuk.com',
         'https://events.blkoutuk.com',
         'https://comms.blkoutuk.com',
-        'https://movement.blkoutuk.com',
         'https://compass.blkoutuk.com',
         'https://voices.blkoutuk.com',
         'https://critical.blkoutuk.com',
@@ -100,7 +99,6 @@ app.use(cors({
         'https://news.blkoutuk.cloud',
         'https://events.blkoutuk.cloud',
         'https://comms.blkoutuk.cloud',
-        'https://movement.blkoutuk.cloud',
         'https://compass.blkoutuk.cloud',
         'https://voices.blkoutuk.cloud'
       ]
