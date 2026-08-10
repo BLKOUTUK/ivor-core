@@ -89,6 +89,7 @@ app.use(cors({
         'https://blkoutuk.com',
         'https://www.blkoutuk.com',
         // Public .com domains (canonical)
+        'https://commons.blkoutuk.com',
         'https://news.blkoutuk.com',
         'https://events.blkoutuk.com',
         'https://comms.blkoutuk.com',

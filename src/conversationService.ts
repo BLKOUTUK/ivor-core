@@ -115,6 +115,7 @@ class ConversationService {
   private createSystemPrompt(context: ConversationContext, resources: any[], liveDataPrompt?: string): string {
     const emotionalState = context.emotionalState || 'calm'
     const isCrisis = emotionalState === 'overwhelmed' || emotionalState === 'stressed'
+    const picnicBlock = this.picnicContext((context.userProfile as any)?.page === 'picnic-2026')
 
     return `You are AIvor, the AI assistant for BLKOUT — a community-owned platform for Black queer men in the UK. You were named after Ivor Cummings, a pioneering Black British civil rights figure.
 
@@ -188,7 +189,36 @@ The user is chatting with you RIGHT NOW on blkoutuk.com. They are already on the
 - NEVER generate page URLs like "blkoutuk.com/events" — those specific paths may not exist. Just reference the section name.
 
 BLKOUT CONTEXT:
-BLKOUT is a Community Benefit Society — cooperatively owned by its members. It's not a charity and not a corporation. If someone asks about BLKOUT, explain it as community-owned technology and media for Black queer men. The platform includes events, news, a community hub, and you — AIvor.`
+BLKOUT is a Community Benefit Society — cooperatively owned by its members. It's not a charity and not a corporation. If someone asks about BLKOUT, explain it as community-owned technology and media for Black queer men. The platform includes events, news, a community hub, and you — AIvor.
+
+${picnicBlock}`
+  }
+
+  // Time-boxed knowledge for the 2026 Annual Picnic (chat widget on the picnic
+  // landing page). Self-expires after the event weekend so stale facts never
+  // linger in the prompt. All info is open — nothing is gated behind sign-up
+  // (Rob, 10 Aug). The exact pin doesn't exist yet; it publishes Fri 14 Aug.
+  private picnicContext(onPicnicPage: boolean): string {
+    if (new Date().toISOString().slice(0, 10) > '2026-08-17') return ''
+    return `THE BLKOUT ANNUAL PICNIC — VERIFIED EVENT FACTS (our flagship community day; answer questions about it freely and warmly — nothing here is a secret and nobody needs to sign up to be told anything):
+- Sunday 16 August 2026, 1–7.30pm, Regent's Park, London. Free, always — no tickets, no stage, no line-up, no programme. Just us.
+- Full written briefing ("The useful bits") lives at commons.blkoutuk.com/picnic-faq.html — a verified URL you may share.
+- Location: Regent's Park. The exact corner hasn't been picked yet — it's chosen late for weather and ground. It is announced publicly on the picnic pages on Friday 14 August as a precise what3words pin with nearest gates, step-free routes and toilets, and emailed out the same day. NEVER guess or invent the pin before then; say when and where it lands instead.
+- Who: Black queer men and the people who hold us — every age. Kids welcome, elders honoured, dogs on their best behaviour. Coming alone is the whole point of the invitation: bring yourself, make a crew there.
+- What to bring: a blanket or rug, food you love (enough to share if you can), your people. We sit low on the grass — rugs beat tables and chairs, gazebos stay home. If sitting low doesn't work for someone's body, they should bring the chair they need; comfort is always welcome.
+- Food and drink: bring it ready to eat — no barbecues or cooking in the park. BLKOUT covers backup food, so nobody goes hungry. Drinks welcome (18+ for alcohol); cans and plastic beat glass — bare feet on grass all afternoon.
+- Music: crews bring their own sound — one small hand-carried speaker per crew, kept to your own rugs. The afternoon breathes first: conversation, games and food until about 5pm, then the music comes up with the golden hour. Voices welcome all day — if you sing, sing.
+- Games and karaoke on the day, with hand-pressed BLKOUT tees as prizes.
+- Rain: we watch the sky all week and post a weather word on the picnic pages before the day (sign-ups also get it by email). Light rain means umbrellas and bravado; a proper washout means a new plan, posted in the same places.
+- Chip-in: coming is free, always. An optional chip-in on the day covers the food and the sound.
+- Solidarity collection: we are also collecting for queer people in Accra organising under Ghana's new anti-LGBTQ bill (three years in prison for being who you are, ten for funding anyone who is). Donation link (verified, you may share): paypal.com/pools/c/9rBY1G6fsi — "give what you'd have spent on a round". If asked which organisation receives it, say it goes to grassroots LGBTQ+ organisers in Ghana; do not name individual organisations.
+- After the picnic winds down at 7.30pm: karaoke at Zodiac Bar, 119 Hampstead Road, NW1 — a short walk from the park's east side. 8–11pm, free, all welcome, sign-up or not.
+- Saving a spot is NOT a ticket and NOT the price of information — it just helps us plan the backup food, and gets you the pin, the weather word and any last-minute changes by email.
+- Helping: extra hands for welcome, setup and pack-down are gold — reply to the spot confirmation email, or email rob@blkoutuk.com.
+- Other Black queer picnics happen in London the same day (Burgess Park; Queertopia at Haggerston). If asked, celebrate that — our communities have enough going on to offer a choice. Never frame them as competition; people are welcome wherever they land, and at ours.
+${onPicnicPage
+    ? '- IMPORTANT: the user is chatting with you from the picnic page RIGHT NOW. The "Save your spot" form is on the very page they are looking at, just below this chat — point them there if they want the email updates, never to another section or URL.'
+    : '- Sign-up: the "Save your spot" form at blkoutuk.com/picnic (a verified URL you may share).'}`
   }
 
   /**
