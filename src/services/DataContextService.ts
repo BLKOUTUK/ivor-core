@@ -12,9 +12,13 @@ export interface LiveContext {
   learning: string
   groups: string
   shop: string
+  openings: string
+  places: string
 }
 
 type TopicHint =
+  | 'openings'
+  | 'places'
   | 'events'
   | 'news'
   | 'learning'
@@ -48,17 +52,19 @@ export class DataContextService {
 
     try {
       // Fetch data in parallel, scoped by topic relevance
-      const [events, news, learning, groups, shop] = await Promise.all([
+      const [events, news, learning, groups, shop, openings, places] = await Promise.all([
         this.shouldFetch(hint, 'events') ? this.getUpcomingEvents(hint === 'events' ? 25 : 5, location, dateRange) : Promise.resolve(''),
         this.shouldFetch(hint, 'news') ? this.getRecentNews(hint === 'news' ? 5 : 3) : Promise.resolve(''),
         this.shouldFetch(hint, 'learning') ? this.getLearningModules(hint === 'learning' ? 10 : 3) : Promise.resolve(''),
         this.shouldFetch(hint, 'groups') ? this.getCommunityGroups(hint === 'groups' ? 10 : 3, location) : Promise.resolve(''),
-        this.shouldFetch(hint, 'shop') ? this.getShopHighlights(5) : Promise.resolve('')
+        this.shouldFetch(hint, 'shop') ? this.getShopHighlights(5) : Promise.resolve(''),
+        this.shouldFetch(hint, 'openings') ? this.getOpenings(hint === 'openings' ? 25 : 6) : Promise.resolve(''),
+        this.shouldFetch(hint, 'places') ? this.getPlaces(location, hint === 'places' ? 45 : 12) : Promise.resolve('')
       ])
 
       console.log(`[DataContext] Fetched context for hint="${hint}": events=${!!events}, news=${!!news}, learning=${!!learning}, groups=${!!groups}, shop=${!!shop}`)
 
-      return { events, news, learning, groups, shop }
+      return { events, news, learning, groups, shop, openings, places }
     } catch (error) {
       console.error('[DataContext] Error fetching context:', error)
       return this.emptyContext()
@@ -72,9 +78,8 @@ export class DataContextService {
       const today = new Date().toISOString().split('T')[0]
 
       let query = this.supabase!
-        .from('events')
+        .from('gatherings_live') // the same completeness-gated view events.blkoutuk.com shows
         .select('title, date, start_time, end_time, location, organizer, description, cost, url, tags')
-        .eq('status', 'approved')
         .gte('date', dateRange?.from || today)
         .order('date', { ascending: true })
         .limit(limit)
@@ -108,6 +113,63 @@ export class DataContextService {
       console.warn('[DataContext] Events fetch failed:', error)
       return ''
     }
+  }
+
+  /** Things to go after — openings_live on events.blkoutuk.com (jobs, commissions, bursaries, funds, calls). */
+  private async getOpenings(limit: number): Promise<string> {
+    try {
+      const { data, error } = await this.supabase!
+        .from('openings_live')
+        .select('title, organisation, kind, beat, summary, open_to, pay, location, url, deadline')
+        .order('deadline', { ascending: true, nullsFirst: false })
+        .limit(limit)
+      if (error || !data || data.length === 0) {
+        if (error) console.warn('[DataContext] Openings query error:', error.message)
+        return ''
+      }
+      return data.map(o => {
+        const closes = o.deadline ? `closes ${new Date(o.deadline).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}` : 'rolling'
+        const pay = o.pay ? ` [${o.pay}]` : ''
+        const openTo = o.open_to ? ` — open to: ${o.open_to}` : ''
+        return `- ${o.title} — ${o.organisation} (${o.kind}, ${closes})${pay}${openTo} | ${o.url}`
+      }).join('\n')
+    } catch (error) {
+      console.warn('[DataContext] Openings fetch failed:', error)
+      return ''
+    }
+  }
+
+  private placesCache: { at: number; places: any[] } | null = null
+
+  /** Where we are — the checked Places directory published by events.blkoutuk.com/places.json (1h cache). */
+  private async getPlaces(location?: string, limit = 12): Promise<string> {
+    try {
+      if (!this.placesCache || Date.now() - this.placesCache.at > 60 * 60 * 1000) {
+        const res = await fetch('https://events.blkoutuk.com/places.json')
+        if (!res.ok) { console.warn('[DataContext] places.json HTTP', res.status); return this.placesCache ? this.formatPlaces(this.placesCache.places, location, limit) : '' }
+        const json: any = await res.json()
+        this.placesCache = { at: Date.now(), places: Array.isArray(json?.places) ? json.places : [] }
+      }
+      return this.formatPlaces(this.placesCache.places, location, limit)
+    } catch (error) {
+      console.warn('[DataContext] Places fetch failed:', error)
+      return ''
+    }
+  }
+
+  private formatPlaces(all: any[], location: string | undefined, limit: number): string {
+    let list = all
+    if (location && location !== 'unknown') {
+      const loc = location.toLowerCase()
+      const near = all.filter(p => [p.where, p.borough, p.region, p.name].filter(Boolean).some((f: string) => f.toLowerCase().includes(loc)))
+      if (near.length) list = [...near, ...all.filter(p => !near.includes(p))]
+    }
+    return list.slice(0, limit).map(p => {
+      const where = [p.where, p.borough ? `${p.borough}` : null].filter(Boolean).join(', ')
+      const reg = p.regular ? ` (${p.regular})` : ''
+      const link = p.url ? ` | ${p.url}` : ''
+      return `- ${p.name} — ${p.what}${reg} — ${where}${link}`
+    }).join('\n')
   }
 
   private async getRecentNews(limit: number): Promise<string> {
@@ -298,6 +360,12 @@ export class DataContextService {
   private detectTopicHint(message: string, topic?: string): TopicHint {
     const lower = (message || '').toLowerCase()
 
+    // Openings — things to go after
+    if (/\b(apply|application|job|jobs|vacanc|bursar|grant|fund|funding|commission|residenc|fellowship|opportunit|deadline|call for|open call|trustee|internship)\w*\b/.test(lower)) return 'openings'
+
+    // Places — where we are (standing organisations, groups, venues)
+    if (/\b(where (do|can|to)|organisation|organization|directory|venue|club night|meet ?up|places?|near me|in my area|around here|regular|monthly group|peer support)\b/.test(lower)) return 'places'
+
     // Events (including date references that imply event queries)
     if (/\b(event|what'?s on|this weekend|next weekend|this week|next week|calendar|gig|party|night out|social|meetup|gathering|valentine|friday|saturday|sunday|dance|rave|club night)\b/.test(lower)) return 'events'
 
@@ -322,8 +390,12 @@ export class DataContextService {
   /**
    * Decide whether to fetch a data category based on the detected topic hint.
    */
-  private shouldFetch(hint: TopicHint, category: 'events' | 'news' | 'learning' | 'groups' | 'shop'): boolean {
+  private shouldFetch(hint: TopicHint, category: 'events' | 'news' | 'learning' | 'groups' | 'shop' | 'openings' | 'places'): boolean {
     if (hint === category) return true
+    // Places ride along with events/groups questions; openings ride along with learning questions.
+    if (category === 'places' && (hint === 'events' || hint === 'groups')) return true
+    if (category === 'openings' && hint === 'learning') return true
+    if (category === 'places' || category === 'openings') return false
     if (hint === 'general') {
       // For general queries, fetch events + news + learning (the most broadly useful)
       return category !== 'shop'
@@ -334,7 +406,7 @@ export class DataContextService {
   }
 
   private emptyContext(): LiveContext {
-    return { events: '', news: '', learning: '', groups: '', shop: '' }
+    return { events: '', news: '', learning: '', groups: '', shop: '', openings: '', places: '' }
   }
 
   /**
@@ -357,6 +429,12 @@ export class DataContextService {
     }
     if (ctx.shop) {
       sections.push(`FEATURED IN THE SHOP:\n${ctx.shop}`)
+    }
+    if (ctx.openings) {
+      sections.push(`OPENINGS — things to go after (jobs, commissions, bursaries, funds, calls; from events.blkoutuk.com/openings):\n${ctx.openings}`)
+    }
+    if (ctx.places) {
+      sections.push(`PLACES — organisations, groups and venues for Black queer people, each checked for activity in the last year (from events.blkoutuk.com/places):\n${ctx.places}`)
     }
 
     if (sections.length === 0) return ''
