@@ -29,7 +29,6 @@ import intelligenceRoutes from './api/intelligenceRoutes.js'
 import shopRoutes from './api/shopRoutes.js'
 import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
 import checkoutRoutes from './api/checkoutRoutes.js'
-import councilRoutes from './api/councilRoutes.js'
 import campaignRoutes from './api/campaignRoutes.js'
 import interviewRoutes from './api/interviewRoutes.js'
 import panelImageRoutes from './api/panelImageRoutes.js'
@@ -140,7 +139,6 @@ app.use('/api/voice', voiceRoutes)          // Voice synthesis (MeloTTS) API
 app.use('/api/intelligence', intelligenceRoutes)  // Conversation intelligence & community insights API
 app.use('/api/shop', shopRoutes)           // Shop & marketplace API
 app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
-app.use('/api/council', councilRoutes)     // LLM Council & compliance API
 app.use('/api/campaign', campaignRoutes)   // Campaign tracking & health API
 app.use('/api/interview', interviewRoutes)  // Ivor's Compass interview challenge API
 app.use('/api/interview', panelImageRoutes)  // Ivor's Compass panel image generation

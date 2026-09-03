@@ -5,7 +5,6 @@
  */
 import cron from 'node-cron'
 import { getSupabaseClient } from '../lib/supabaseClient.js'
-import { CouncilService } from '../services/CouncilService.js'
 import campaignTrackingService from '../services/CampaignTrackingService.js'
 
 /**
@@ -97,22 +96,10 @@ export function initializeScheduler() {
   })
   console.log('   ├── Feedback Loop: weekly Monday 4am UTC')
 
-  // 8. LLM Council — weekly Wednesday at 10am UTC (after intelligence has refreshed)
-  cron.schedule('0 10 * * 3', async () => {
-    console.log('[CRON] Convening LLM Council for newsletter curation...')
-    try {
-      const council = new CouncilService()
-      const verdict = await council.convene('newsletter', 'cron')
-      if (verdict) {
-        console.log(`[CRON] Council complete — liberation score: ${verdict.liberationScore}`)
-      } else {
-        console.log('[CRON] Council returned no verdict')
-      }
-    } catch (error) {
-      console.error('[CRON] Council session failed:', error)
-    }
-  })
-  console.log('   ├── LLM Council: weekly Wednesday 10am UTC')
+  // 8. LLM Council — RETIRED 3 Sep 2026. It ran weekly, deliberated a Christmas advent
+  //    campaign all summer, and since 19 Aug recorded 1-second sessions with an empty
+  //    ranking as `completed`. Unattended LLM spend with no reader; see comms-blkout
+  //    docs/council-verdict-2026-09-03.md. council_sessions rows are kept as the record.
 
   // 9. Campaign health snapshot — weekly Monday at 5am UTC (after feedback loop at 4am)
   cron.schedule('0 5 * * 1', async () => {
