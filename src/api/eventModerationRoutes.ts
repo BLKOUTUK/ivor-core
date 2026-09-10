@@ -3,6 +3,10 @@
  * Community safety and content moderation for events
  *
  * Liberation Feature: Protecting community spaces
+ *
+ * AUTH: the whole router is mounted behind requireSessionMiddleware in
+ * server.ts. req.sessionUser is a Supabase-verified user; client-supplied
+ * moderatorId / moderatorName are ignored wherever a moderator is recorded.
  */
 
 import { Router } from 'express'
@@ -123,7 +127,9 @@ router.get('/reports', async (req, res) => {
 router.put('/reports/:reportId', async (req, res) => {
   try {
     const { reportId } = req.params
-    const { status, resolutionNotes, actionTaken, moderatorId } = req.body
+    const { status, resolutionNotes, actionTaken } = req.body
+    // Was: resolved_by = req.body.moderatorId (client-supplied, unverified).
+    const moderator = req.sessionUser?.identity || 'unknown'
 
     const report = reports.get(reportId)
     if (!report) {
@@ -136,12 +142,12 @@ router.put('/reports/:reportId', async (req, res) => {
     report.status = status
     report.resolution_notes = resolutionNotes
     report.action_taken = actionTaken
-    report.resolved_by = moderatorId
+    report.resolved_by = moderator
     report.resolved_at = new Date().toISOString()
 
     reports.set(reportId, report)
 
-    console.log(`✅ [Event Moderation] Report ${reportId} ${status}`)
+    console.log(`✅ [Event Moderation] Report ${reportId} ${status} by ${moderator}`)
 
     res.json({
       success: true,
@@ -164,12 +170,17 @@ router.put('/reports/:reportId', async (req, res) => {
  */
 router.post('/action', async (req, res) => {
   try {
-    const { eventId, action, reason, notes, moderatorId, moderatorName } = req.body
+    const { eventId, action, reason, notes } = req.body
+    // Was: moderator_id = req.body.moderatorId and moderator_name =
+    // req.body.moderatorName, both client-supplied. moderatorId is no longer a
+    // required field — the session supplies it, so it can never be absent.
+    const moderatorId = req.sessionUser?.id || 'unknown'
+    const moderatorName = req.sessionUser?.identity || 'unknown'
 
-    if (!eventId || !action || !moderatorId) {
+    if (!eventId || !action) {
       return res.status(400).json({
         success: false,
-        error: 'Event ID, action, and moderator ID are required'
+        error: 'Event ID and action are required'
       })
     }
 
@@ -192,7 +203,7 @@ router.post('/action', async (req, res) => {
       reason: reason || null,
       notes: notes || null,
       moderator_id: moderatorId,
-      moderator_name: moderatorName || 'Moderator',
+      moderator_name: moderatorName,
       created_at: new Date().toISOString()
     }
 

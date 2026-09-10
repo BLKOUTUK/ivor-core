@@ -33,6 +33,7 @@ import campaignRoutes from './api/campaignRoutes.js'
 import interviewRoutes from './api/interviewRoutes.js'
 import panelImageRoutes from './api/panelImageRoutes.js'
 import campaignTrackingService from './services/CampaignTrackingService.js'
+import { requireSessionMiddleware } from './middleware/requireSession.js'
 
 // Conversation Intelligence Service (Self-Improving System)
 import conversationIntelligenceService from './services/ConversationIntelligenceService.js'
@@ -114,6 +115,19 @@ app.use(express.urlencoded({ extended: true }))
 
 // Serve static files from public/ (reference audio for voice cloning, etc.)
 app.use('/public', express.static(path.join(process.cwd(), 'public')))
+
+// Auth guards — MUST precede the route mounts below.
+// Every route in this service acts on the service-role key, so RLS cannot stop
+// an anonymous caller. These two families take moderation actions on community
+// content and were reachable with no credentials at all; they now require a
+// verified Supabase session bearer.
+//   - POST /api/news/:id/moderate   publishes/archives news articles
+//   - /api/event-moderation/*       event reports, moderation actions, queue reads
+// Deliberately NOT guarded here: /api/moderate* (LLM relevance scoring) — its
+// callers are the events-calendar Chrome extension and the BrowserAct netlify
+// receiver, neither of which holds a session. Guarding it is a separate decision.
+app.post('/api/news/:id/moderate', requireSessionMiddleware)
+app.use('/api/event-moderation', requireSessionMiddleware)
 
 // API routes
 app.use('/api', feedbackRoutes)
