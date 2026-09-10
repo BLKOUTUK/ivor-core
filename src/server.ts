@@ -121,11 +121,13 @@ app.use('/public', express.static(path.join(process.cwd(), 'public')))
 // an anonymous caller. These two families take moderation actions on community
 // content and were reachable with no credentials at all; they now require a
 // verified Supabase session bearer.
+//   - GET  /api/news/pending        the unmoderated news queue (service-role read)
 //   - POST /api/news/:id/moderate   publishes/archives news articles
 //   - /api/event-moderation/*       event reports, moderation actions, queue reads
 // Deliberately NOT guarded here: /api/moderate* (LLM relevance scoring) — its
 // callers are the events-calendar Chrome extension and the BrowserAct netlify
 // receiver, neither of which holds a session. Guarding it is a separate decision.
+app.get('/api/news/pending', requireSessionMiddleware)
 app.post('/api/news/:id/moderate', requireSessionMiddleware)
 app.use('/api/event-moderation', requireSessionMiddleware)
 
