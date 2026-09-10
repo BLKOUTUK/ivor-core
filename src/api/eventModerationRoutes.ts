@@ -5,7 +5,7 @@
  * Liberation Feature: Protecting community spaces
  *
  * AUTH: the whole router is mounted behind requireSessionMiddleware in
- * server.ts. req.sessionUser is a Supabase-verified user; client-supplied
+ * server.ts. req.user is a Supabase-verified user; client-supplied
  * moderatorId / moderatorName are ignored wherever a moderator is recorded.
  */
 
@@ -129,7 +129,7 @@ router.put('/reports/:reportId', async (req, res) => {
     const { reportId } = req.params
     const { status, resolutionNotes, actionTaken } = req.body
     // Was: resolved_by = req.body.moderatorId (client-supplied, unverified).
-    const moderator = req.sessionUser?.identity || 'unknown'
+    const moderator = req.user?.email || 'unknown'
 
     const report = reports.get(reportId)
     if (!report) {
@@ -174,8 +174,8 @@ router.post('/action', async (req, res) => {
     // Was: moderator_id = req.body.moderatorId and moderator_name =
     // req.body.moderatorName, both client-supplied. moderatorId is no longer a
     // required field — the session supplies it, so it can never be absent.
-    const moderatorId = req.sessionUser?.id || 'unknown'
-    const moderatorName = req.sessionUser?.identity || 'unknown'
+    const moderatorId = req.user?.id || 'unknown'
+    const moderatorName = req.user?.email || 'unknown'
 
     if (!eventId || !action) {
       return res.status(400).json({

@@ -4,10 +4,18 @@
  * Every ivor-core route acts on the SERVICE ROLE key, so RLS cannot stop a
  * caller: whatever the route does, it does with full database rights. The
  * moderation endpoints therefore need an application-level gate, and this is
- * it. Ported from the same check that already guards the openings queue in
- * black-qtipoc-events-calendar (api/pending-openings.ts, api/moderate-opening.ts):
- * verify the caller's `Authorization: Bearer <supabase jwt>` against
- * `${SUPABASE_URL}/auth/v1/user`, using the ANON key as the apikey.
+ * it. Ported from comms-blkout api/_auth.ts, which is itself the check that
+ * guards the openings queue in black-qtipoc-events-calendar
+ * (api/pending-openings.ts, api/moderate-opening.ts): verify the caller's
+ * `Authorization: Bearer <supabase jwt>` against `${SUPABASE_URL}/auth/v1/user`,
+ * using the ANON key as the apikey. Same shape, same `req.user`, so a reader of
+ * one recognises the other.
+ *
+ * Two deliberate departures from comms-blkout's copy:
+ *  - config is read at call time, not module load (see readConfig below);
+ *  - it does NOT set Access-Control-Allow-Origin. comms-blkout's copy reflects
+ *    `req.headers.origin || '*'`, which here would widen ivor-core's existing
+ *    cors() allowlist to any origin on exactly the routes that matter most.
  *
  * Fails closed. No new secret: SUPABASE_URL and SUPABASE_ANON_KEY are both
  * already set for this service.
@@ -17,16 +25,15 @@ import type { Request, Response, NextFunction } from 'express'
 
 export interface SessionUser {
   id: string
-  email: string | null
-  /** Verified identity to record as the moderator — email if present, else the uuid. */
-  identity: string
+  /** Email if the account has one, else the uuid — never empty. */
+  email: string
 }
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      sessionUser?: SessionUser
+      user?: SessionUser
     }
   }
 }
@@ -60,16 +67,14 @@ export async function verifySessionToken(authHeader: string | undefined): Promis
       headers: {
         apikey: anonKey,
         Authorization: `Bearer ${token}`
-      }
+      },
+      // A hung Supabase must not hang the request. Matches comms-blkout api/_auth.ts.
+      signal: AbortSignal.timeout(8000)
     })
     if (!response.ok) return null
     const user: any = await response.json()
     if (!user || !user.id) return null
-    return {
-      id: user.id,
-      email: user.email || null,
-      identity: user.email || user.id
-    }
+    return { id: user.id, email: user.email || user.id }
   } catch (error) {
     console.error('[requireSession] Token verification error:', error)
     return null
@@ -77,9 +82,9 @@ export async function verifySessionToken(authHeader: string | undefined): Promis
 }
 
 /**
- * Express middleware. Attaches the verified user to req.sessionUser.
- * Handlers downstream must use req.sessionUser for moderator identity and
- * never a client-supplied moderatorId.
+ * Express middleware. Attaches the verified user to req.user.
+ * Handlers downstream must use req.user for moderator identity and never a
+ * client-supplied moderatorId.
  */
 export function requireSessionMiddleware(req: Request, res: Response, next: NextFunction) {
   // Preflight: the global cors() usually answers this first, but if the origin
@@ -101,7 +106,7 @@ export function requireSessionMiddleware(req: Request, res: Response, next: Next
       if (!user) {
         return res.status(401).json({ success: false, error: 'Sign in required' })
       }
-      req.sessionUser = user
+      req.user = user
       next()
     })
     .catch((error) => {

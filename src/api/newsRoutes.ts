@@ -295,7 +295,7 @@ router.get('/pending', async (req, res) => {
  * POST /api/news/:id/moderate
  * Moderate an article (approve/reject/edit)
  *
- * Guarded by requireSessionMiddleware in server.ts — req.sessionUser is the
+ * Guarded by requireSessionMiddleware in server.ts — req.user is the
  * verified moderator. Any moderatorId in the request body is ignored: the
  * client does not get to say who it is. news_articles has no moderated_by
  * column, so the identity goes to the server log rather than the row.
@@ -304,7 +304,7 @@ router.post('/:id/moderate', async (req, res) => {
   try {
     const { id } = req.params;
     const { action, edits } = req.body;
-    const moderator = req.sessionUser?.identity || 'unknown';
+    const moderator = req.user?.email || 'unknown';
 
     if (!SUPABASE_URL || !SUPABASE_KEY) {
       return res.status(200).json({
