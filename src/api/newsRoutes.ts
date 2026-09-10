@@ -355,7 +355,8 @@ router.post('/:id/moderate', async (req, res) => {
       }
     );
 
-    console.log(`✅ [News] Article ${action}:`, id, `by ${moderator}`);
+    // Values as arguments, never in the format position (CodeQL js/tainted-format-string).
+    console.log('✅ [News] Article %s: %s by %s', action, id, moderator);
 
     return res.status(200).json({
       success: true,
