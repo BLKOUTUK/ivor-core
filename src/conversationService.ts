@@ -61,9 +61,12 @@ class ConversationService {
         apiKey: groqKey,
         baseURL: 'https://api.groq.com/openai/v1'
       })
-      this.aiModel = 'llama-3.3-70b-versatile'
+      // llama-3.x models were retired from this Groq account (confirmed via
+      // GET /openai/v1/models, 14 Sep 2026) — this fallback was silently
+      // broken until now, masked by DashScope being primary.
+      this.aiModel = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
       this.isAIEnabled = true
-      console.log('ConversationService: GROQ AI fallback enabled')
+      console.log(`ConversationService: GROQ AI fallback enabled (model: ${this.aiModel})`)
     } else {
       console.log('ConversationService: AI disabled, using rule-based responses')
     }
