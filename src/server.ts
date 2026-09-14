@@ -264,9 +264,10 @@ app.get('/health/liberation', async (req, res) => {
 // Core AI Chat endpoint with Liberation Layer 3 Integration + Conversation Intelligence
 app.post('/api/chat', async (req, res) => {
   (req as any)._startTime = Date.now()
+  let currentSessionId: string | undefined
   try {
     const { message, sessionId, userContext } = req.body
-    const currentSessionId = sessionId || `session-${Date.now()}`
+    currentSessionId = sessionId || `session-${Date.now()}`
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
@@ -362,6 +363,18 @@ app.post('/api/chat', async (req, res) => {
       }).then(({ error: fbError }) => {
         if (fbError) console.error('[Feedback] Insert failed:', fbError.message)
       })
+
+      // Operational reliability tracking (non-blocking) — the failure-path
+      // counterpart lives in this handler's catch block
+      supabaseForFeedback.from('ivor_usage_analytics').insert({
+        session_id: currentSessionId,
+        user_id: userHash,
+        endpoint: '/api/chat',
+        response_time_ms: Date.now() - (req as any)._startTime || null,
+        success: true,
+      }).then(({ error: uaError }) => {
+        if (uaError) console.error('[UsageAnalytics] Insert failed:', uaError.message)
+      })
     }
 
     // Campaign tracking — classify feature usage and persist metrics (non-blocking)
@@ -422,6 +435,25 @@ app.post('/api/chat', async (req, res) => {
 
   } catch (error) {
     console.error('Core chat error:', error)
+
+    const supabaseForFailure = getSupabaseClient()
+    if (supabaseForFailure) {
+      const userHash = require('crypto').createHash('sha256')
+        .update((req.ip || 'anonymous') + (req.headers['user-agent'] || ''))
+        .digest('hex').substring(0, 16)
+
+      supabaseForFailure.from('ivor_usage_analytics').insert({
+        session_id: currentSessionId || 'unknown',
+        user_id: userHash,
+        endpoint: '/api/chat',
+        response_time_ms: Date.now() - (req as any)._startTime || null,
+        success: false,
+        error_message: error instanceof Error ? error.message.substring(0, 500) : 'Unknown error',
+      }).then(({ error: uaError }) => {
+        if (uaError) console.error('[UsageAnalytics] Failure insert failed:', uaError.message)
+      })
+    }
+
     res.status(500).json({
       error: 'Internal server error processing your message',
       communitySupport: '/community/support',

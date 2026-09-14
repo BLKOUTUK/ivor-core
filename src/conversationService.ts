@@ -83,7 +83,12 @@ class ConversationService {
     }
 
     try {
-      const systemPrompt = this.createSystemPrompt(context, relevantResources, liveDataPrompt)
+      const memories = await this.getConversationMemory(context.userId, context.sessionId)
+      const memoryPrompt = memories.length > 0
+        ? `\nWHAT YOU ALREADY KNOW ABOUT THIS SESSION (from earlier in this conversation — use naturally, don't announce that you're recalling it):\n${memories.slice(0, 5).map(m => `- ${m.memory_key}: ${JSON.stringify(m.memory_value)}`).join('\n')}\n`
+        : ''
+
+      const systemPrompt = this.createSystemPrompt(context, relevantResources, `${liveDataPrompt || ''}${memoryPrompt}`)
       const conversationHistory = context.conversationHistory.slice(-20)
 
       const messages = [
@@ -322,32 +327,6 @@ ${onPicnicPage
     } catch (error) {
       console.error('Error retrieving conversation memory:', error)
       return []
-    }
-  }
-
-  /**
-   * Update user interaction patterns
-   */
-  async updateUserPatterns(userId: string, patternType: string, patternData: any): Promise<void> {
-    if (!this.supabase) {
-      console.log('📊 Mock: Would update user patterns:', { userId, patternType, patternData })
-      return
-    }
-
-    try {
-      await this.supabase
-        .from('ivor_user_patterns')
-        .upsert({
-          user_id: userId,
-          pattern_type: patternType,
-          pattern_data: patternData,
-          confidence_score: 0.8,
-          last_updated: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,pattern_type'
-        })
-    } catch (error) {
-      console.error('Error updating user patterns:', error)
     }
   }
 

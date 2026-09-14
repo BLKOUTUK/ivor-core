@@ -140,21 +140,6 @@ export class ConversationIntelligenceService {
       }
     }
 
-    // Store feedback to database for effectiveness tracking
-    if (this.supabase) {
-      try {
-        await this.supabase.from('ivor_resource_effectiveness').upsert({
-          resource_id: resourceId,
-          session_id: sessionId,
-          was_helpful: wasHelpful,
-          feedback_at: new Date().toISOString()
-        }, {
-          onConflict: 'resource_id,session_id'
-        });
-      } catch (error) {
-        console.error('Error storing resource feedback:', error);
-      }
-    }
   }
 
   /**
@@ -389,24 +374,6 @@ Respond in valid JSON format only:
         });
 
         console.log(`Stored conversation intelligence for ${conversationId}`);
-
-        // Store resource effectiveness data
-        if (resources.length > 0) {
-          for (const resource of resources) {
-            await this.supabase.from('ivor_resource_recommendations').upsert({
-              id: uuidv4(),
-              conversation_id: conversationId,
-              resource_id: resource.resourceId,
-              resource_title: resource.resourceTitle,
-              resource_category: resource.resourceCategory,
-              journey_stage: journeyStage,
-              topic_categories: themes.topicCategories,
-              was_helpful: resource.wasHelpful,
-              recommended_at: resource.recommendedAt.toISOString()
-            });
-          }
-          console.log(`Stored ${resources.length} resource recommendations`);
-        }
 
         // Update trending topics aggregation
         await this.updateTrendingTopics(themes);
