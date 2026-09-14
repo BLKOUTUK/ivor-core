@@ -160,6 +160,10 @@ app.use('/api/interview', interviewRoutes)  // Ivor's Compass interview challeng
 app.use('/api/interview', panelImageRoutes)  // Ivor's Compass panel image generation
 
 // Health check
+// ivor.blkoutuk.com and ivor.blkoutuk.cloud are API hosts with no page at /. Send a person
+// (or a crawler) who lands here to IVOR's public introduction instead of a 404.
+app.get('/', (_req, res) => res.redirect(302, 'https://blkoutuk.com/intro'))
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
