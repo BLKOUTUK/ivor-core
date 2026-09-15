@@ -27,7 +27,7 @@ interface ConversationContext {
 // Enhanced Conversation Service with AI and Memory
 class ConversationService {
   private ai: OpenAI | null = null
-  private aiModel: string = 'qwen-max'
+  private aiModel: string = 'openai/gpt-oss-120b'
   private supabase: any
   private embeddingService: EmbeddingService
   private isAIEnabled: boolean = false
@@ -44,30 +44,18 @@ class ConversationService {
 
     this.embeddingService = new EmbeddingService()
 
-    // Primary: Qwen AI via DashScope (OpenAI-compatible)
-    const dashscopeKey = process.env.DASHSCOPE_API_KEY
+    // GROQ via OpenAI-compatible interface (DashScope/Qwen removed 15 Sep 2026 —
+    // the Alibaba Cloud Model Studio account was cancelled for hidden charging)
     const groqKey = process.env.GROQ_API_KEY
 
-    if (dashscopeKey && dashscopeKey !== 'your-dashscope-api-key-here') {
-      this.ai = new OpenAI({
-        apiKey: dashscopeKey,
-        baseURL: process.env.DASHSCOPE_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
-      })
-      this.aiModel = process.env.DASHSCOPE_MODEL || 'qwen-max'
-      this.isAIEnabled = true
-      console.log(`ConversationService: Qwen AI enabled (model: ${this.aiModel})`)
-    } else if (groqKey && groqKey !== 'your-groq-api-key-here') {
-      // Fallback: GROQ via OpenAI-compatible interface
+    if (groqKey && groqKey !== 'your-groq-api-key-here') {
       this.ai = new OpenAI({
         apiKey: groqKey,
         baseURL: 'https://api.groq.com/openai/v1'
       })
-      // llama-3.x models were retired from this Groq account (confirmed via
-      // GET /openai/v1/models, 14 Sep 2026) — this fallback was silently
-      // broken until now, masked by DashScope being primary.
       this.aiModel = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
       this.isAIEnabled = true
-      console.log(`ConversationService: GROQ AI fallback enabled (model: ${this.aiModel})`)
+      console.log(`ConversationService: GROQ AI enabled (model: ${this.aiModel})`)
     } else {
       console.log('ConversationService: AI disabled, using rule-based responses')
     }

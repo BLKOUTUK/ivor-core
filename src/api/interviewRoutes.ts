@@ -5,19 +5,10 @@ import { getInterviewSystemPrompt, getTableConfig } from '../data/interviewPromp
 const router = Router()
 
 // Initialise LLM client — same pattern as conversationService.ts
+// (DashScope/Qwen removed 15 Sep 2026 — the Alibaba Cloud Model Studio account
+// was cancelled for hidden charging)
 function createLLMClient(): { client: OpenAI; model: string } | null {
   const groqKey = process.env.GROQ_API_KEY
-  const dashscopeKey = process.env.DASHSCOPE_API_KEY
-
-  if (dashscopeKey && dashscopeKey !== 'your-dashscope-api-key-here') {
-    return {
-      client: new OpenAI({
-        apiKey: dashscopeKey,
-        baseURL: process.env.DASHSCOPE_BASE_URL || 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
-      }),
-      model: process.env.DASHSCOPE_MODEL || 'qwen-max',
-    }
-  }
 
   if (groqKey && groqKey !== 'your-groq-api-key-here') {
     return {
