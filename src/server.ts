@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 import ConversationService from './conversationService.js'
 import JourneyAwareConversationService from './services/JourneyAwareConversationService.js'
 import { DataContextService } from './services/DataContextService.js'
+import { handleQuizMessage } from './services/BHMQuizService.js'
 import { getSupabaseClient } from './lib/supabaseClient.js'
 import feedbackRoutes from './api/feedbackRoutes.js'
 import adminRoutes from './api/adminRoutes.js'
@@ -783,6 +784,19 @@ async function generateJourneyAwareResponse(message: string, context?: any, sess
   resourcesProvided: string[]
 }> {
   try {
+    // BHM Icons Quiz (October 2026 only) — deterministic, checked before the
+    // LLM ever sees the message, so a prize mechanism can't be hallucinated.
+    const quizResult = await handleQuizMessage(message, sessionId || 'default')
+    if (quizResult.handled) {
+      return {
+        response: quizResult.response!,
+        journeyContext: { stage: 'growth', emotionalState: 'calm', urgencyLevel: 'low' },
+        nextStageGuidance: '',
+        followUpRequired: false,
+        resourcesProvided: [],
+      }
+    }
+
     // JourneyAwareConversationService handles emotion detection,
     // topic extraction, and AI/fallback routing internally
     const journeyResponse = await journeyConversationService.generateJourneyAwareResponse(

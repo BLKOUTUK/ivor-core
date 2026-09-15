@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import EmbeddingService from './embeddingService.js'
+import { getQuizStatusHint } from './services/BHMQuizService.js'
 
 interface ConversationContext {
   userId: string
@@ -91,7 +92,10 @@ class ConversationService {
         ? `\nWHAT YOU ALREADY KNOW ABOUT THIS SESSION (from earlier in this conversation — use naturally, don't announce that you're recalling it):\n${memories.slice(0, 5).map(m => `- ${m.memory_key}: ${JSON.stringify(m.memory_value)}`).join('\n')}\n`
         : ''
 
-      const systemPrompt = this.createSystemPrompt(context, relevantResources, `${liveDataPrompt || ''}${memoryPrompt}`)
+      const quizHint = await getQuizStatusHint(context.sessionId)
+      const quizPrompt = quizHint ? `\nBHM ICONS QUIZ STATUS: ${quizHint}\n` : ''
+
+      const systemPrompt = this.createSystemPrompt(context, relevantResources, `${liveDataPrompt || ''}${memoryPrompt}${quizPrompt}`)
       const conversationHistory = context.conversationHistory.slice(-20)
 
       const messages = [
