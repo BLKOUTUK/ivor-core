@@ -11,6 +11,9 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || ''
 })
 
+// llama-3.x was retired from this account 14 Sep 2026 (see conversationService.ts fix)
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
+
 // Supabase REST API configuration
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim()
 const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
@@ -40,7 +43,7 @@ interface IncomingEvent {
  */
 router.post('/webhook', async (req, res) => {
   const startTime = Date.now()
-  console.log('[Events Webhook] 🚀 DEPLOYMENT v197585f - llama-3.3-70b-versatile + Supabase ACTIVE')
+  console.log(`[Events Webhook] 🚀 DEPLOYMENT v197585f - ${GROQ_MODEL} + Supabase ACTIVE`)
 
   try {
     // Validate authentication
@@ -171,7 +174,7 @@ async function moderateEventContent(content: IncomingEvent): Promise<any> {
 
   try {
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: GROQ_MODEL,
       messages: [
         {
           role: 'system',

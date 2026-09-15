@@ -25,7 +25,7 @@ function createLLMClient(): { client: OpenAI; model: string } | null {
         apiKey: groqKey,
         baseURL: 'https://api.groq.com/openai/v1',
       }),
-      model: 'llama-3.3-70b-versatile',
+      model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
     }
   }
 

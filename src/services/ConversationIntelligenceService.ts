@@ -158,7 +158,7 @@ export class ConversationIntelligenceService {
         .join('\n');
 
       const response = await this.groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
         messages: [
           {
             role: 'system',

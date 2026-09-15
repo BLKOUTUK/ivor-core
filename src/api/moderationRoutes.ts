@@ -8,6 +8,10 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || ''
 })
 
+// llama-3.x was retired from this account 14 Sep 2026 (see conversationService.ts fix) —
+// one constant so the model and the model_used response field can never drift apart again.
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
+
 interface ModerationRequest {
   content: {
     type: 'event' | 'news'
@@ -56,7 +60,7 @@ router.post('/moderate', async (req, res) => {
 
     // Call Groq API for AI moderation
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.1-70b-versatile',
+      model: GROQ_MODEL,
       messages: [
         {
           role: 'system',
@@ -101,7 +105,7 @@ router.post('/moderate', async (req, res) => {
       ...moderationResult,
       content_type: content.type,
       analyzed_at: new Date().toISOString(),
-      model_used: 'llama-3.1-70b-versatile',
+      model_used: GROQ_MODEL,
       source_url: content.source_url
     }
 
@@ -239,7 +243,7 @@ router.post('/moderate/batch', async (req, res) => {
           const prompt = buildModerationPrompt(content, moderationRequest.moderation_type)
 
           const completion = await groq.chat.completions.create({
-            model: 'llama-3.1-70b-versatile',
+            model: GROQ_MODEL,
             messages: [
               {
                 role: 'system',
@@ -360,7 +364,7 @@ router.post('/moderate/test', async (req, res) => {
         const prompt = buildModerationPrompt(content, 'event_relevance')
 
         const completion = await groq.chat.completions.create({
-          model: 'llama-3.1-70b-versatile',
+          model: GROQ_MODEL,
           messages: [
             {
               role: 'system',
