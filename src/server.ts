@@ -60,9 +60,13 @@ const app = express()
 const PORT = process.env.PORT || 3021
 
 // Initialize services
+// Service-role key: ivor_conversation_memory's RLS policy is service_role-only
+// (personal, per-session memory data — not anon-readable). The anon key silently
+// failed every read/write here (Supabase returns RLS denials as an error field,
+// not a throw, and this call site never checked it).
 const baseConversationService = new ConversationService(
   process.env.SUPABASE_URL || 'mock-url',
-  process.env.SUPABASE_ANON_KEY || 'mock-key'
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || 'mock-key'
 )
 
 // Initialize data context service for live Supabase data in prompts

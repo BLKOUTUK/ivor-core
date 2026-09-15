@@ -283,7 +283,7 @@ ${onPicnicPage
         `${memoryKey}: ${JSON.stringify(memoryValue)}`
       )
 
-      await this.supabase
+      const { error } = await this.supabase
         .from('ivor_conversation_memory')
         .upsert({
           user_id: userId,
@@ -297,6 +297,8 @@ ${onPicnicPage
         }, {
           onConflict: 'user_id,session_id,memory_key'
         })
+
+      if (error) console.error('Error storing conversation memory:', error.message)
     } catch (error) {
       console.error('Error storing conversation memory:', error)
     }
