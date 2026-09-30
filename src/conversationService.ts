@@ -2,6 +2,7 @@ import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import EmbeddingService from './embeddingService.js'
 import { getQuizStatusHint } from './services/BHMQuizService.js'
+import { scratchFacts } from './lib/scratchFacts.js'
 
 interface ConversationContext {
   userId: string
@@ -116,6 +117,8 @@ class ConversationService {
     const emotionalState = context.emotionalState || 'calm'
     const isCrisis = emotionalState === 'overwhelmed' || emotionalState === 'stressed'
     const picnicBlock = this.picnicContext((context.userProfile as any)?.page === 'picnic-2026')
+    const scratchFactsBlock = scratchFacts(new Date().toISOString().slice(0, 10))
+    const scratchBlock = scratchFactsBlock ? `\n\n${scratchFactsBlock}` : ''
 
     return `You are AIvor, the AI assistant for BLKOUT — a community-owned platform for Black queer men in the UK. You were named after Ivor Cummings, a pioneering Black British civil rights figure.
 
@@ -193,7 +196,7 @@ The user is chatting with you RIGHT NOW on blkoutuk.com. They are already on the
 BLKOUT CONTEXT:
 BLKOUT is a Community Benefit Society — cooperatively owned by its members. It's not a charity and not a corporation. If someone asks about BLKOUT, explain it as community-owned technology and media for Black queer men. The platform includes events, news, a community hub, and you — AIvor.
 
-${picnicBlock}`
+${picnicBlock}${scratchBlock}`
   }
 
   // Time-boxed knowledge for the 2026 Annual Picnic (chat widget on the picnic
