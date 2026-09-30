@@ -9,6 +9,7 @@ import { DataContextService } from './services/DataContextService.js'
 import { handleQuizMessage } from './services/BHMQuizService.js'
 import { getSupabaseClient } from './lib/supabaseClient.js'
 import feedbackRoutes from './api/feedbackRoutes.js'
+import consultRoutes from './api/consultRoutes.js'
 import adminRoutes from './api/adminRoutes.js'
 import socialMediaRoutes from './api/socialMediaRoutes.js'
 import moderationRoutes from './api/moderationRoutes.js'
@@ -138,6 +139,7 @@ app.use('/api/event-moderation', requireSessionMiddleware)
 
 // API routes
 app.use('/api', feedbackRoutes)
+app.use('/api/consult', consultRoutes)  // Consult AIvor about a gesture: returns a draft, sends nothing (own secret, not a session)
 app.use('/api/admin', adminRoutes)
 app.use('/api/social', socialMediaRoutes)
 app.use('/api', moderationRoutes)
