@@ -126,7 +126,7 @@ router.post('/submit', async (req, res) => {
       status: articleStatus,
       published: isAutoPublished,
       published_at: isAutoPublished ? new Date().toISOString() : null,
-      liberation_score: Math.round(liberationCheck.liberationScore * 100), // Store as 0-100
+      liberation_score: Math.max(1, Math.round(liberationCheck.liberationScore * 10)), // DB CHECK requires 1-10
       created_at: new Date().toISOString()
     };
 
