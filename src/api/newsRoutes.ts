@@ -110,9 +110,9 @@ router.post('/submit', async (req, res) => {
 
     console.log('🏴‍☠️ [News] Liberation validation:', liberationCheck);
 
-    // Determine status based on liberation check
-    const articleStatus = liberationCheck.recommendation === 'publish' ? 'published' : 'review';
-    const isAutoPublished = liberationCheck.recommendation === 'publish';
+    // Every community submission goes to moderation; the liberation check informs, never publishes
+    const articleStatus = 'review';
+    const isAutoPublished = false;
 
     // Prepare article data with liberation score
     const articleData = {
