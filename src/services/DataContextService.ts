@@ -14,6 +14,7 @@ export interface LiveContext {
   shop: string
   openings: string
   places: string
+  doors: string
 }
 
 type TopicHint =
@@ -52,19 +53,20 @@ export class DataContextService {
 
     try {
       // Fetch data in parallel, scoped by topic relevance
-      const [events, news, learning, groups, shop, openings, places] = await Promise.all([
+      const [events, news, learning, groups, shop, openings, places, doors] = await Promise.all([
         this.shouldFetch(hint, 'events') ? this.getUpcomingEvents(hint === 'events' ? 25 : 5, location, dateRange) : Promise.resolve(''),
         this.shouldFetch(hint, 'news') ? this.getRecentNews(hint === 'news' ? 5 : 3) : Promise.resolve(''),
         this.shouldFetch(hint, 'learning') ? this.getLearningModules(hint === 'learning' ? 10 : 3) : Promise.resolve(''),
         this.shouldFetch(hint, 'groups') ? this.getCommunityGroups(hint === 'groups' ? 10 : 3, location) : Promise.resolve(''),
         this.shouldFetch(hint, 'shop') ? this.getShopHighlights(5) : Promise.resolve(''),
         this.shouldFetch(hint, 'openings') ? this.getOpenings(hint === 'openings' ? 25 : 6) : Promise.resolve(''),
-        this.shouldFetch(hint, 'places') ? this.getPlaces(location, hint === 'places' ? 45 : 12) : Promise.resolve('')
+        this.shouldFetch(hint, 'places') ? this.getPlaces(location, hint === 'places' ? 45 : 12) : Promise.resolve(''),
+        this.getDoors(message, location)
       ])
 
       console.log(`[DataContext] Fetched context for hint="${hint}": events=${!!events}, news=${!!news}, learning=${!!learning}, groups=${!!groups}, shop=${!!shop}`)
 
-      return { events, news, learning, groups, shop, openings, places }
+      return { events, news, learning, groups, shop, openings, places, doors }
     } catch (error) {
       console.error('[DataContext] Error fetching context:', error)
       return this.emptyContext()
@@ -170,6 +172,48 @@ export class DataContextService {
       const link = p.url ? ` | ${p.url}` : ''
       return `- ${p.name} — ${p.what}${reg} — ${where}${link}`
     }).join('\n')
+  }
+
+  private doorsCache: { at: number; doors: any[] } | null = null
+
+  /** Borough doors — what each door page on events.blkoutuk.com says, from /doors.json (1h cache).
+   *  Returns the full door for any borough named in the message or location; for a general
+   *  "door/borough" question, the list of open doors. Empty otherwise. */
+  private async getDoors(message: string, location?: string): Promise<string> {
+    try {
+      if (!this.doorsCache || Date.now() - this.doorsCache.at > 60 * 60 * 1000) {
+        const res = await fetch('https://events.blkoutuk.com/doors.json')
+        if (!res.ok) { console.warn('[DataContext] doors.json HTTP', res.status); if (!this.doorsCache) return '' }
+        else {
+          const json: any = await res.json()
+          this.doorsCache = { at: Date.now(), doors: Array.isArray(json?.doors) ? json.doors : [] }
+        }
+      }
+      const all = this.doorsCache!.doors
+      const text = `${message || ''} ${location && location !== 'unknown' ? location : ''}`.toLowerCase()
+      const named = all.filter(d => text.includes(String(d.borough).toLowerCase())).slice(0, 2)
+      if (named.length) return named.map(d => this.formatDoor(d)).join('\n\n')
+      if (/\b(door|doors|borough|boroughs|london)\b/.test(text))
+        return `Open borough doors: ${all.map(d => `${d.borough} (${d.url})`).join(', ')}`
+      return ''
+    } catch (error) {
+      console.warn('[DataContext] Doors fetch failed:', error)
+      return ''
+    }
+  }
+
+  private formatDoor(d: any): string {
+    const list = (title: string, entries: any[]) => entries?.length
+      ? `${title}:\n${entries.map(e => `- ${e.name} — ${e.note ?? ''}${e.url ? ` | ${e.url}` : ''}`).join('\n')}` : ''
+    return [
+      `DOOR: BLKOUT in ${d.borough} — ${d.url} (checked ${d.lastChecked})`,
+      d.history ? `History, as the page tells it:\n${String(d.history).slice(0, 1800)}` : '',
+      list('Here in the borough', d.here),
+      d.here?.length ? '' : (d.quietNote ? `Here in the borough: ${d.quietNote}` : ''),
+      list('Beside us (allies and neighbours)', d.besideUs),
+      list('Worth the journey', d.worthTheJourney),
+      list('Look after yourself (services)', d.services)
+    ].filter(Boolean).join('\n')
   }
 
   private async getRecentNews(limit: number): Promise<string> {
@@ -406,7 +450,7 @@ export class DataContextService {
   }
 
   private emptyContext(): LiveContext {
-    return { events: '', news: '', learning: '', groups: '', shop: '', openings: '', places: '' }
+    return { events: '', news: '', learning: '', groups: '', shop: '', openings: '', places: '', doors: '' }
   }
 
   /**
@@ -435,6 +479,10 @@ export class DataContextService {
     }
     if (ctx.places) {
       sections.push(`PLACES — organisations, groups and venues for Black queer people, each checked for activity in the last year (from events.blkoutuk.com/places):\n${ctx.places}`)
+    }
+
+    if (ctx.doors) {
+      sections.push(`BOROUGH DOORS — BLKOUT's own page for the borough asked about (events.blkoutuk.com). Answer from it and give the door's link:\n${ctx.doors}`)
     }
 
     if (sections.length === 0) return ''
