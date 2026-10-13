@@ -176,6 +176,24 @@ export class DataContextService {
 
   private doorsCache: { at: number; doors: any[] } | null = null
 
+  /** Neighbourhoods people actually name, mapped to the borough whose local page covers them. */
+  private static AREA_TO_BOROUGH: Record<string, string> = {
+    brixton: 'Lambeth', stockwell: 'Lambeth', vauxhall: 'Lambeth', clapham: 'Lambeth', streatham: 'Lambeth', 'west norwood': 'Lambeth', kennington: 'Lambeth', 'herne hill': 'Lambeth',
+    peckham: 'Southwark', camberwell: 'Southwark', 'elephant and castle': 'Southwark', 'elephant & castle': 'Southwark', bermondsey: 'Southwark', 'east dulwich': 'Southwark', dulwich: 'Southwark', walworth: 'Southwark', 'london bridge': 'Southwark', bankside: 'Southwark',
+    deptford: 'Lewisham', catford: 'Lewisham', 'new cross': 'Lewisham', 'forest hill': 'Lewisham', brockley: 'Lewisham', sydenham: 'Lewisham',
+    'thornton heath': 'Croydon', 'south norwood': 'Croydon', norbury: 'Croydon', purley: 'Croydon', 'east croydon': 'Croydon',
+    soho: 'Westminster', 'covent garden': 'Westminster', marylebone: 'Westminster', paddington: 'Westminster', pimlico: 'Westminster', 'west end': 'Westminster', mayfair: 'Westminster', 'maida vale': 'Westminster',
+    'camden town': 'Camden', 'kentish town': 'Camden', "king's cross": 'Camden', 'kings cross': 'Camden', holborn: 'Camden', bloomsbury: 'Camden', kilburn: 'Camden', hampstead: 'Camden',
+    highbury: 'Islington', holloway: 'Islington', archway: 'Islington', angel: 'Islington', 'upper street': 'Islington', 'finsbury park': 'Islington', clerkenwell: 'Islington',
+    dalston: 'Hackney', shoreditch: 'Hackney', 'stoke newington': 'Hackney', homerton: 'Hackney', 'hackney wick': 'Hackney', clapton: 'Hackney', 'london fields': 'Hackney',
+    tottenham: 'Haringey', 'wood green': 'Haringey', 'crouch end': 'Haringey', 'seven sisters': 'Haringey', 'muswell hill': 'Haringey', hornsey: 'Haringey',
+    'bethnal green': 'Tower Hamlets', bow: 'Tower Hamlets', whitechapel: 'Tower Hamlets', limehouse: 'Tower Hamlets', poplar: 'Tower Hamlets', 'mile end': 'Tower Hamlets', 'canary wharf': 'Tower Hamlets', 'brick lane': 'Tower Hamlets', spitalfields: 'Tower Hamlets', stepney: 'Tower Hamlets',
+    stratford: 'Newham', 'east ham': 'Newham', 'west ham': 'Newham', 'forest gate': 'Newham', 'canning town': 'Newham', plaistow: 'Newham',
+    walthamstow: 'Waltham Forest', leyton: 'Waltham Forest', leytonstone: 'Waltham Forest', chingford: 'Waltham Forest',
+    edmonton: 'Enfield', 'ponders end': 'Enfield', southgate: 'Enfield',
+    wembley: 'Brent', harlesden: 'Brent', willesden: 'Brent', 'kensal green': 'Brent', neasden: 'Brent', 'kensal rise': 'Brent'
+  }
+
   /** Borough doors — what each door page on events.blkoutuk.com says, from /doors.json (1h cache).
    *  Returns the full door for any borough named in the message or location; for a general
    *  "door/borough" question, the list of open doors. Empty otherwise. */
@@ -191,10 +209,14 @@ export class DataContextService {
       }
       const all = this.doorsCache!.doors
       const text = `${message || ''} ${location && location !== 'unknown' ? location : ''}`.toLowerCase()
-      const named = all.filter(d => text.includes(String(d.borough).toLowerCase())).slice(0, 2)
+      const has = (term: string) => new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text)
+      const wanted = new Set<string>()
+      for (const d of all) if (has(String(d.borough).toLowerCase())) wanted.add(d.borough)
+      for (const [area, borough] of Object.entries(DataContextService.AREA_TO_BOROUGH)) if (has(area)) wanted.add(borough)
+      const named = all.filter(d => wanted.has(d.borough)).slice(0, 2)
       if (named.length) return named.map(d => this.formatDoor(d)).join('\n\n')
-      if (/\b(door|doors|borough|boroughs|london)\b/.test(text))
-        return `Open borough doors: ${all.map(d => `${d.borough} (${d.url})`).join(', ')}`
+      if (/\b(london|near me|nearby|in my area|around here|local|locally|my borough|north london|south london|east london|west london)\b/.test(text))
+        return `BLKOUT has a local page for these London boroughs — ask which area they're in, then use it: ${all.map(d => `${d.borough} (${d.url})`).join(', ')}`
       return ''
     } catch (error) {
       console.warn('[DataContext] Doors fetch failed:', error)
@@ -206,7 +228,7 @@ export class DataContextService {
     const list = (title: string, entries: any[]) => entries?.length
       ? `${title}:\n${entries.map(e => `- ${e.name} — ${e.note ?? ''}${e.url ? ` | ${e.url}` : ''}`).join('\n')}` : ''
     return [
-      `DOOR: BLKOUT in ${d.borough} — ${d.url} (checked ${d.lastChecked})`,
+      `BLKOUT in ${d.borough} — local page ${d.url} (checked ${d.lastChecked})`,
       d.history ? `History, as the page tells it:\n${String(d.history).slice(0, 1800)}` : '',
       list('Here in the borough', d.here),
       d.here?.length ? '' : (d.quietNote ? `Here in the borough: ${d.quietNote}` : ''),
@@ -482,7 +504,7 @@ export class DataContextService {
     }
 
     if (ctx.doors) {
-      sections.push(`BOROUGH DOORS — BLKOUT's own page for the borough asked about (events.blkoutuk.com). Answer from it and give the door's link:\n${ctx.doors}`)
+      sections.push(`LOCAL — BLKOUT's own local page for the area asked about (events.blkoutuk.com). Answer from it, and share the page link:\n${ctx.doors}`)
     }
 
     if (sections.length === 0) return ''
