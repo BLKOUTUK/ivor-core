@@ -194,6 +194,7 @@ If this was urgent and I missed that, please call the emergency numbers above im
         { name: 'Terrence Higgins Trust', description: 'HIV and sexual health support and information' }
       ],
       'mental health': [
+        { name: 'BLKOUT: mental health', description: 'Our approach, the Critical Frequency essays and where to start: blkoutuk.com/mental-health' },
         { name: 'NHS IAPT Services', description: 'Free NHS therapy for anxiety and depression - self-referral available' },
         { name: 'Mind.org.uk', description: 'Mental health information and local services directory' },
         { name: 'Your GP', description: 'First point of contact for NHS mental health services' }
@@ -211,7 +212,7 @@ If this was urgent and I missed that, please call the emergency numbers above im
       'community support': [
         { name: 'UK Black Pride', description: 'Community events and support for LGBTQ+ people of color' },
         { name: 'Local LGBTQ+ Centers', description: 'Community support groups and services in your area' },
-        { name: 'LGBT+ Switchboard', description: 'Information and support: 0300 330 0630' }
+        { name: 'Switchboard', description: 'LGBTQIA+ support line: 0800 0119 100' }
       ]
     }
 
