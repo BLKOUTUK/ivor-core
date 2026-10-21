@@ -479,6 +479,9 @@ router.post('/:eventId/check-in', async (req, res) => {
 router.get('/user/:userId/rsvps', async (req, res) => {
   try {
     const { userId } = req.params;
+    if (req.user && req.user.id !== userId) {
+      return res.status(403).json({ success: false, error: 'You can only see your own RSVPs' });
+    }
     const { status, upcoming } = req.query;
 
     if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -608,6 +611,64 @@ router.get('/:eventId/capacity', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to get capacity',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/events/:eventId/rsvps/export
+ * Export RSVPs as CSV for admin/organizer use
+ */
+router.get('/:eventId/rsvps/export', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      // Demo mode
+      const rsvps = Array.from(demoRsvps.values())
+        .filter(r => r.event_id === eventId);
+
+      const csvHeader = 'Name,Email,Status,Guests,Check-in Code,Checked In,Dietary,Accessibility\n';
+      const csvRows = rsvps.map((r: any) =>
+        `"${r.attendee_name || ''}","${r.attendee_email || ''}","${r.status}",${r.guest_count || 0},"${r.check_in_code || ''}",${r.checked_in ? 'Yes' : 'No'},"${r.dietary_requirements || ''}","${r.accessibility_needs || ''}"`
+      ).join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename=rsvps-${eventId}.csv`);
+      return res.send(csvHeader + csvRows);
+    }
+
+    const response = await axios.get(
+      `${SUPABASE_URL}/rest/v1/event_rsvps`,
+      {
+        params: {
+          event_id: `eq.${eventId}`,
+          select: 'attendee_name,attendee_email,status,guest_count,check_in_code,checked_in,dietary_requirements,accessibility_needs',
+          order: 'created_at.asc'
+        },
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+
+    const rsvps = response.data || [];
+    const csvHeader = 'Name,Email,Status,Guests,Check-in Code,Checked In,Dietary,Accessibility\n';
+    const csvRows = rsvps.map((r: any) =>
+      `"${(r.attendee_name || '').replace(/"/g, '""')}","${(r.attendee_email || '').replace(/"/g, '""')}","${r.status}",${r.guest_count || 0},"${r.check_in_code || ''}",${r.checked_in ? 'Yes' : 'No'},"${(r.dietary_requirements || '').replace(/"/g, '""')}","${(r.accessibility_needs || '').replace(/"/g, '""')}"`
+    ).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=rsvps-${eventId}.csv`);
+    return res.send(csvHeader + csvRows);
+
+  } catch (error: any) {
+    console.error('[RSVP] Export error:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to export RSVPs',
       message: error.message
     });
   }

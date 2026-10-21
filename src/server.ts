@@ -135,6 +135,12 @@ app.use('/public', express.static(path.join(process.cwd(), 'public')))
 app.get('/api/news/pending', requireSessionMiddleware)
 app.post('/api/news/:id/moderate', requireSessionMiddleware)
 app.use('/api/event-moderation', requireSessionMiddleware)
+// RSVP organiser views (21 Oct 2026): attendee names, emails, dietary and accessibility needs.
+// Same service-role reasoning as above. Public RSVP create/cancel and capacity stay open.
+app.get('/api/rsvp/:eventId/rsvps', requireSessionMiddleware)
+app.get('/api/rsvp/:eventId/rsvps/export', requireSessionMiddleware)
+app.get('/api/rsvp/user/:userId/rsvps', requireSessionMiddleware)
+app.post('/api/rsvp/:eventId/check-in', requireSessionMiddleware)
 
 // API routes
 app.use('/api', feedbackRoutes)

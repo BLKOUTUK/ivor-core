@@ -41,3 +41,9 @@ coverage/
 # Temporary files
 tmp/
 temp/
+graphify-out/
+supabase/.temp/
+test-aivor.sh
+RALPH_LOOP_PROMPT.md
+.understand-anything/
+.graphifyignore
