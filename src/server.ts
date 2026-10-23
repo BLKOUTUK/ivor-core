@@ -29,6 +29,7 @@ import voiceRoutes from './api/voiceRoutes.js'
 import intelligenceRoutes from './api/intelligenceRoutes.js'
 import shopRoutes from './api/shopRoutes.js'
 import stripeWebhookRoutes from './api/webhooks/stripeWebhook.js'
+import zeffyWebhookRoutes from './api/webhooks/zeffyWebhook.js'
 import checkoutRoutes from './api/checkoutRoutes.js'
 import campaignRoutes from './api/campaignRoutes.js'
 import interviewRoutes from './api/interviewRoutes.js'
@@ -114,6 +115,7 @@ app.use(cors({
 
 // IMPORTANT: Stripe webhook MUST use raw body parsing BEFORE express.json()
 app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookRoutes)
+app.use('/api/webhooks/zeffy', express.raw({ type: 'application/json' }), zeffyWebhookRoutes)
 
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
