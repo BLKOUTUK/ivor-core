@@ -219,6 +219,7 @@ ${shopBlock}`
   - Whole day with lunch: £28 if booked by Saturday 12 December (lower price £14; pay what you can, from £0); £33 from Sunday 13 December; lunch sales close Tuesday 22 December.
   - The Play Parlour + Club Frolic (from 3pm): £10 (lower price £5; pay what you can, from £0).
   - Club Frolic only: £10 if booked by Tuesday 22 December, £12 from Wednesday 23 December, lower price £5; on the door £15 cash or card, or £5 lower price.
+  - IMPORTANT: 'lower price' (a fixed reduced price) and 'pay what you can' (any amount from £0) are two DIFFERENT tickets. Never call the £14 or £5 tickets pay what you can. Club Frolic-only has a lower price but no pay-what-you-can ticket; the Play Parlour + Club Frolic ticket and the whole-day lunch ticket (by 12 Dec) have both.
   - Lower price and pay what you can are for anyone on a low income or not in paid work — students, carers, retired people, people seeking sanctuary, anyone for whom money is tight. On trust: no questions, no proof. Money never closes the door. If lower-price lunch places have gone, they can email rob@blkoutuk.com.
   - Zeffy, the free platform BLKOUT uses, adds an optional tip for itself at checkout. It comes pre-filled; you can change it to £0; it does not go to BLKOUT.
   - Refunds: not set — say a person will answer at rob@blkoutuk.com.
