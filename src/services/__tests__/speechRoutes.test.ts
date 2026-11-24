@@ -72,6 +72,14 @@ describe('POST /api/speech: disclosures are not stored', () => {
     expect(JSON.stringify(rows)).not.toMatch(/dad died/)
   })
 
+  it('stores the fixed wording, not a model reply that echoes the disclosure', async () => {
+    callModel.mockResolvedValue(ok("That's fine. What you just said about your dad hasn't been kept. Use the buttons on screen to stay here, change the subject, or stop for today."))
+    const r = await post({ mode: 'interview', message: DISCLOSURE, sessionId: sid() })
+    expect(r.body.status).toBe('FULL_STOP')
+    const rows = save.mock.calls[save.mock.calls.length - 1][0] as Array<{ role: string; content: string }>
+    expect(JSON.stringify(rows)).not.toMatch(/dad/)
+  })
+
   it('stores no user row on a risk (ENDED) turn', async () => {
     callModel.mockResolvedValue(ok("Thank you for telling me. We're stopping here."))
     const r = await post({ mode: 'interview', message: 'I want to kill myself', sessionId: sid() })

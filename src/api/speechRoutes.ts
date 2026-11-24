@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express'
 import { SPEECH_MODES, type SpeechMode } from '../services/speechGuards.js'
-import { runSpeechTurn, FULL_STOP_OPTIONS, type ChatTurn, type FullStopChoice, type SessionState } from '../services/speechCoach.js'
+import { runSpeechTurn, FULL_STOP_OPTIONS, FULL_STOP_FALLBACK_REPLY, type ChatTurn, type FullStopChoice, type SessionState } from '../services/speechCoach.js'
 import { callSpeechModel, speechProvider } from '../services/speechModel.js'
 import { saveSpeechTurns, isUuid } from '../services/speechTurnStore.js'
 
@@ -153,7 +153,8 @@ router.post('/', async (req: Request, res: Response) => {
             session_id: sessionId,
             role: 'assistant' as const,
             mode,
-            content: result.reply,
+            // On a full stop the model's reply can echo his disclosure; store the fixed wording instead.
+            content: result.status === 'FULL_STOP' ? FULL_STOP_FALLBACK_REPLY : result.reply,
             consent_level: consent_level as 'crew' | 'private',
             turn_status: result.status,
             guards,
