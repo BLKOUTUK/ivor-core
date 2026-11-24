@@ -20,7 +20,7 @@ const CHOICES: FullStopChoice[] = ['stay', 'change_subject', 'stop', 'resume']
 // Wording owned by Rob + the safeguarding lead (WP6). Never invent a helpline.
 const SUPPORT_MESSAGE =
   process.env.SPEECH_SUPPORT_MESSAGE ||
-  'Rob and Derek are on hand: message either of them now. If you are in danger, call 999.'
+  'Rob is on hand: message him now. You can also call Samaritans free on 116 123, any time. If you are in danger, call 999.'
 
 /**
  * POST /api/speech
