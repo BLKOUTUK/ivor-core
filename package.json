@@ -12,6 +12,7 @@
     "vercel-build": "echo 'Skipping build - using serverless API routes only'"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
     "@supabase/supabase-js": "^2.53.1",
     "@types/node-cron": "^3.0.11",
     "@types/uuid": "^10.0.0",
@@ -57,6 +58,9 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
     "extensionsToTreatAsEsm": [
       ".ts"
     ],

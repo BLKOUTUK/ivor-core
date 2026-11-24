@@ -33,6 +33,7 @@ import zeffyWebhookRoutes from './api/webhooks/zeffyWebhook.js'
 import checkoutRoutes from './api/checkoutRoutes.js'
 import campaignRoutes from './api/campaignRoutes.js'
 import interviewRoutes from './api/interviewRoutes.js'
+import speechRoutes from './api/speechRoutes.js'
 import panelImageRoutes from './api/panelImageRoutes.js'
 import campaignTrackingService from './services/CampaignTrackingService.js'
 import { requireSessionMiddleware } from './middleware/requireSession.js'
@@ -171,6 +172,7 @@ app.use('/api/checkout', checkoutRoutes)   // Checkout & order processing API
 app.use('/api/campaign', campaignRoutes)   // Campaign tracking & health API
 app.use('/api/interview', interviewRoutes)  // Ivor's Compass interview challenge API
 app.use('/api/interview', panelImageRoutes)  // Ivor's Compass panel image generation
+app.use('/api/speech', speechRoutes)        // Kings' Speech writing coach (WP4)
 
 // Health check
 // ivor.blkoutuk.com and ivor.blkoutuk.cloud are API hosts with no page at /. Send a person
