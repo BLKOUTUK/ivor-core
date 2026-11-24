@@ -108,7 +108,9 @@ app.use(cors({
         'https://events.blkoutuk.cloud',
         'https://comms.blkoutuk.cloud',
         'https://compass.blkoutuk.cloud',
-        'https://voices.blkoutuk.cloud'
+        'https://voices.blkoutuk.cloud',
+        // Choose Joy (King's Speech /speech flow)
+        'https://joy.blkoutuk.cloud'
       ]
     : ['http://localhost:5181', 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true
