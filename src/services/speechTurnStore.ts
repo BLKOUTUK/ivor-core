@@ -71,15 +71,34 @@ function getClient(): SupabaseClient | null {
   return client
 }
 
+/** A hung store must not hang his reply. */
+export const STORE_TIMEOUT_MS = 5_000
+
 export async function saveSpeechTurns(rows: SpeechTurnRow[], opts: { offRecord: boolean }): Promise<StoreResult> {
   if (opts.offRecord) return { status: 'NOT_STORED_OFF_RECORD' }
   const db = getClient()
   if (!db) return { status: 'NOT_CONFIGURED', error: 'SPEECH_SUPABASE_URL / SPEECH_SUPABASE_SERVICE_ROLE_KEY not set' }
   if (!rows.length || !rows.every((r) => isUuid(r.session_id))) return { status: 'FAILED', error: 'invalid session id' }
-  const { error } = await db.from(SPEECH_TURNS_TABLE).insert(rows)
-  if (error) {
-    console.error('[speech] turn store FAILED:', error.code || error.message)
-    return { status: 'FAILED', error: error.code || 'insert failed' }
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<'timeout'>((resolve) => {
+    timer = setTimeout(() => resolve('timeout'), STORE_TIMEOUT_MS)
+  })
+  try {
+    const outcome = await Promise.race([Promise.resolve(db.from(SPEECH_TURNS_TABLE).insert(rows)), timeout])
+    if (outcome === 'timeout') {
+      console.error('[speech] turn store FAILED: timeout')
+      return { status: 'FAILED', error: 'timeout' }
+    }
+    const { error } = outcome
+    if (error) {
+      console.error('[speech] turn store FAILED:', error.code || error.message)
+      return { status: 'FAILED', error: error.code || 'insert failed' }
+    }
+    return { status: 'STORED' }
+  } catch {
+    console.error('[speech] turn store FAILED: insert threw')
+    return { status: 'FAILED', error: 'insert failed' }
+  } finally {
+    clearTimeout(timer)
   }
-  return { status: 'STORED' }
 }

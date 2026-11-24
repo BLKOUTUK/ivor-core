@@ -149,11 +149,12 @@ const MODE_NOTES: Record<SpeechMode, string> = {
   stuck:
     'MODE: stuck. Offer ONE doorway question from the list, introduced with "Here\'s a door, take it or leave it:". Nothing else, under 40 words. Do not write or suggest wording for his piece.',
   shape:
-    'MODE: shape (he asked for writing help). Follow rule 3. Build only from his own words and details: no names, places, dates, numbers or events he has not said. Label suggestions as his to change and end by asking what he would change.',
+    'MODE: shape (he asked for writing help). Follow rule 3. Build only from his own words and details: no names, places, dates, numbers or events he has not said. Label suggestions as his to change and end by asking what he would change. Quotation marks only around his exact words: give reworded options without quotation marks.',
 }
 
+// TODO(Rob): wording
 export const FULL_STOP_NOTE =
-  'FULL STOP. His last message shows emotion or asks for a moment. Rule 6 outranks everything: begin with [FULL STOP], acknowledge plainly in one or two short sentences, say we can stay here, change the subject, or stop for today, offer to leave out or keep only for him what he just said. Ask nothing about what surfaced. No praise, no interpretation.'
+  'FULL STOP. His last message shows emotion or asks for a moment. Rule 6 outranks everything: begin with [FULL STOP], acknowledge plainly in one or two short sentences, say plainly that what he just said has not been kept, and that he can use the buttons on screen to stay here, change the subject, or stop for today. The screen has no text box: do not ask him to type or say anything. Ask nothing about what surfaced. No praise, no interpretation.'
 
 export const RISK_NOTE =
   'He may be at real risk. The interview is over, not paused. Begin with [FULL STOP] and respond as a decent person would, in two or three plain sentences. Ask no questions about what he said. Do not name any helpline or number: the app attaches the support message.'

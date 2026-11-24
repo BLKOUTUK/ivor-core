@@ -6,7 +6,7 @@
  * Turn statuses (never read a fallback as success):
  *   OK                     model reply passed every guard
  *   REPAIRED               reflect reply had quotes he never said; they were removed
- *   FLAGGED                shape suggestion still names things absent from his words (see flagged)
+ *   FLAGGED                kept in the type but never emitted: a shape draft that fails a guard is withheld (GUARD_FAILED_FALLBACK + flagged)
  *   GUARD_FAILED_FALLBACK  guard failed twice; reply is a neutral doorway question
  *   MODEL_FAILED_FALLBACK  model refused / errored / truncated; reply is a neutral fallback
  *   FULL_STOP              emotion: only the three options until he chooses
@@ -129,13 +129,21 @@ export interface SpeechDeps {
   supportMessage: string
 }
 
-const FULL_STOP_MARKER = /^\s*\[FULL STOP\]\s*/i
+/** The model's full-stop signal, anywhere in the reply. */
+const FULL_STOP_MARKER = /\[FULL[ _]STOP\]/i
+const FULL_STOP_MARKER_ALL = /\s*\[FULL[ _]STOP\]\s*/gi
 
+function stripFullStopMarker(text: string): string {
+  return text.replace(FULL_STOP_MARKER_ALL, ' ').trim()
+}
+
+// TODO(Rob): wording
 export const FULL_STOP_FALLBACK_REPLY =
-  "That's fine. We'll stop right here. We can stay here, change the subject, or stop for today. If you want that kept only for you, or left out, say so."
+  "That's fine. We'll stop right here. What you just said hasn't been kept. When you're ready, use the buttons on screen: stay here, change the subject, or stop for today."
 export const RISK_FALLBACK_REPLY =
   "Thank you for telling me. We're stopping here. Please reach out to someone now; the support details are below."
-export const STAY_REPLY = "We'll stay here. Take whatever time you need. When you want to carry on, or stop, just say."
+// TODO(Rob): wording
+export const STAY_REPLY = "We'll stay here. Take whatever time you need. When you're ready, use the buttons on screen to carry on or stop."
 export const STOP_REPLY = "Thank you. We'll stop for today. Everything you've said stays as you chose."
 export const ENDED_REPLY = 'This session has ended.'
 export const MODEL_FALLBACK_SHAPE =
@@ -192,7 +200,7 @@ async function fullStopTurn(
       userMessage: input.message,
       instruction: buildModeNote(input.mode, input.firstName, risk ? RISK_NOTE : FULL_STOP_NOTE),
     }))
-  const text = r.text.replace(FULL_STOP_MARKER, '').trim()
+  const text = stripFullStopMarker(r.text)
   const usable = modelUsable(r)
   const fullStop: FullStopResult = usable
     ? checkFullStopReply(text)
@@ -209,7 +217,7 @@ async function fullStopTurn(
     state: risk ? 'ended' : 'full_stop',
     reply,
     options: risk ? undefined : FULL_STOP_OPTIONS,
-    supportMessage: risk ? deps.supportMessage : undefined,
+    supportMessage: deps.supportMessage,
     attempts: 1,
     fallbackUsed: !passed,
     guards: { distress, fullStop },
@@ -221,19 +229,19 @@ export async function runSpeechTurn(input: SpeechTurnInput, deps: SpeechDeps): P
   const distress = detectDistress(input.message || '')
   const base = { attempts: 0, fallbackUsed: false, model: [] as SpeechTurnResult['model'] }
 
+  // Risk language always ends the session, whatever state we were in (even 'ended').
+  if (distress.level === 'risk') return fullStopTurn(input, deps, distress, true)
+
   // Session already over: nothing reaches the model.
   if (input.state === 'ended') {
-    return { ...base, status: 'ENDED', state: 'ended', reply: ENDED_REPLY, guards: { distress } }
+    return { ...base, status: 'ENDED', state: 'ended', reply: ENDED_REPLY, supportMessage: deps.supportMessage, guards: { distress } }
   }
-
-  // Risk language always ends the session, whatever state we were in.
-  if (distress.level === 'risk') return fullStopTurn(input, deps, distress, true)
 
   let extraNote: string | undefined
   if (input.state === 'full_stop') {
     switch (input.fullStopChoice) {
       case 'stop':
-        return { ...base, status: 'ENDED', state: 'ended', reply: STOP_REPLY, guards: { distress } }
+        return { ...base, status: 'ENDED', state: 'ended', reply: STOP_REPLY, supportMessage: deps.supportMessage, guards: { distress } }
       case 'change_subject':
         extraNote = CHANGE_SUBJECT_NOTE
         break
@@ -249,12 +257,13 @@ export async function runSpeechTurn(input: SpeechTurnInput, deps: SpeechDeps): P
           state: 'full_stop',
           reply: input.fullStopChoice === 'stay' ? STAY_REPLY : FULL_STOP_FALLBACK_REPLY,
           options: FULL_STOP_OPTIONS,
+          supportMessage: deps.supportMessage,
           guards: { distress },
         }
     }
-  } else if (distress.triggered) {
-    return fullStopTurn(input, deps, distress, false)
   }
+  // Every state: a fresh disclosure (including after change_subject / resume) stops again.
+  if (distress.triggered) return fullStopTurn(input, deps, distress, false)
 
   const userMessage =
     input.message && input.message.trim()
@@ -295,23 +304,13 @@ export async function runSpeechTurn(input: SpeechTurnInput, deps: SpeechDeps): P
 
     if (input.mode === 'shape') {
       const invention = checkInvention(text, transcript)
-      lastGuards = { distress, invention }
-      if (invention.status === 'PASSED') {
+      const quotes = verifyQuotes(text, transcript)
+      lastGuards = { distress, invention, quotes }
+      if (invention.status === 'PASSED' && quotes.status !== 'FAILED') {
         return { status: 'OK', state: 'open', reply: text, attempts: attempt, fallbackUsed: false, guards: lastGuards, model: results.map(modelLog) }
       }
-      reasons.push(`names or facts not in his words: ${invention.flagged.join(', ')}`)
-      if (attempt === 2) {
-        return {
-          status: 'FLAGGED',
-          state: 'open',
-          reply: text,
-          flagged: invention.flagged,
-          attempts: attempt,
-          fallbackUsed: false,
-          guards: lastGuards,
-          model: results.map(modelLog),
-        }
-      }
+      if (invention.status === 'FAILED') reasons.push(`names or facts not in his words: ${invention.flagged.join(', ')}`)
+      if (quotes.status === 'FAILED') reasons.push(`quotes not in his words: ${quotes.unverified.join(' | ')}`)
     } else {
       const noWriting = checkNoWriting(text, input.mode)
       const quotes = verifyQuotes(text, transcript)
@@ -350,6 +349,7 @@ export async function runSpeechTurn(input: SpeechTurnInput, deps: SpeechDeps): P
     reply,
     attempts: results.length,
     fallbackUsed: true,
+    flagged: lastGuards.invention?.flagged,
     guards: lastGuards,
     model: results.map(modelLog),
   }

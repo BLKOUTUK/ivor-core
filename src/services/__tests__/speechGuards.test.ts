@@ -53,6 +53,12 @@ describe('checkNoWriting (interview / reflect / stuck)', () => {
     expect(checkNoWriting('You could say "I was standing in the kitchen".', 'reflect').status).toBe('FAILED')
   })
 
+  it("FAILS interview wording offered with bare 'open with' / 'start with' / 'one option'", () => {
+    expect(checkNoWriting("Open with 'this was the year I wore my crown'. Where were you?", 'interview').status).toBe('FAILED')
+    expect(checkNoWriting('Start with the kitchen light. Who left it on?', 'interview').status).toBe('FAILED')
+    expect(checkNoWriting('One option: the light was on. Does that fit?', 'stuck').status).toBe('FAILED')
+  })
+
   it('is NOT_APPLICABLE in shape mode (opt-in writing help)', () => {
     expect(checkNoWriting("Here's a draft from your words.", 'shape').status).toBe('NOT_APPLICABLE')
   })
@@ -79,6 +85,17 @@ describe('verifyQuotes', () => {
 
   it('FAILS when the transcript is empty but quotes are present', () => {
     expect(verifyQuotes('"anything"', '').status).toBe('FAILED')
+  })
+
+  it('FAILS a straight-single-quoted span he never said', () => {
+    const r = verifyQuotes("Open with 'this was the year I wore my crown'. Where were you?", transcript)
+    expect(r.status).toBe('FAILED')
+    expect(r.unverified).toEqual(['this was the year I wore my crown'])
+  })
+
+  it('does not read apostrophes inside words as quotes', () => {
+    expect(verifyQuotes("You said you didn't go. Who's the person you'd thank?", transcript).status).toBe('NO_QUOTES')
+    expect(verifyQuotes("You said 'I nearly didn't go'. Why not?", transcript).status).toBe('PASSED')
   })
 
   it('reports NO_QUOTES (not PASSED) when there is nothing to verify', () => {
@@ -118,6 +135,30 @@ describe('detectDistress', () => {
   it('treats a bare "sorry" as a weak cue only (no trigger on its own)', () => {
     expect(detectDistress('sorry, I meant Tuesday not Monday').triggered).toBe(false)
   })
+
+  it.each([
+    'I wanna die',
+    'I want to take my own life',
+    "honestly they'd be better off without me",
+    'kms',
+    "I don't want to live",
+    'I don’t want to live',
+    'I donʼt want to live',
+  ])('escalates to risk on: %s', (msg) => {
+    expect(detectDistress(msg).level).toBe('risk')
+  })
+
+  it.each(['I was so angry', "I'm furious with him", 'honestly I was fuming'])('pauses on plain anger: %s', (msg) => {
+    expect(detectDistress(msg).level).toBe('pause')
+  })
+
+  it.each(['I was killing myself laughing', 'my mate died by suicide'])('idiom / third person pauses, never risk: %s', (msg) => {
+    expect(detectDistress(msg).level).toBe('pause')
+  })
+
+  it.each(['I ate too much at Christmas', "I'm dying to tell you about Pride"])('does not trigger at all: %s', (msg) => {
+    expect(detectDistress(msg).triggered).toBe(false)
+  })
 })
 
 describe('checkInvention (shape mode)', () => {
@@ -147,8 +188,13 @@ describe('checkInvention (shape mode)', () => {
 
 describe('checkFullStopReply', () => {
   it('passes a plain acknowledgement with the three options and no question', () => {
-    const r = checkFullStopReply("That's fine. We'll stop right here. We can stay here, change the subject, or stop for today. If you want that kept only for you, or left out, say so.")
+    const r = checkFullStopReply("That's fine. We'll stop right here. What you just said hasn't been kept. We can stay here, change the subject, or stop for today.")
     expect(r.status).toBe('PASSED')
+  })
+
+  it('FAILS a reply that asks him to type ("say so"): the full-stop screen has no text box', () => {
+    expect(checkFullStopReply("That's fine. If you want that left out, say so.").status).toBe('FAILED')
+    expect(checkFullStopReply("We'll stay here. When you want to carry on, just say.").status).toBe('FAILED')
   })
 
   it('FAILS a reply that asks about what surfaced', () => {

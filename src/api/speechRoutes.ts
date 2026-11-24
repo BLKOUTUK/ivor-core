@@ -14,6 +14,7 @@ const router = Router()
 
 const MAX_MESSAGE_CHARS = 4000
 const MAX_HISTORY_TURNS = 80
+const MAX_HISTORY_CHARS = 24000
 const STATES: SessionState[] = ['open', 'full_stop', 'ended']
 const CHOICES: FullStopChoice[] = ['stay', 'change_subject', 'stop', 'resume']
 
@@ -21,6 +22,48 @@ const CHOICES: FullStopChoice[] = ['stay', 'change_subject', 'stop', 'resume']
 const SUPPORT_MESSAGE =
   process.env.SPEECH_SUPPORT_MESSAGE ||
   'Rob is on hand: message him now. You can also call Samaritans free on 116 123, any time. If you are in danger, call 999.'
+
+// Server-held session state, so a client that drops or resets `state` cannot leave
+// a full stop or an ended session. In-memory is acceptable: ivor-core runs as one container.
+const HELD_STATE_TTL_MS = 4 * 60 * 60 * 1000
+const HELD_STATE_MAX = 2000
+const heldStates = new Map<string, { state: 'full_stop' | 'ended'; expires: number }>()
+const STATE_RANK: Record<SessionState, number> = { open: 0, full_stop: 1, ended: 2 }
+
+function heldState(sessionId: string | undefined): SessionState | undefined {
+  if (!sessionId) return undefined
+  const held = heldStates.get(sessionId)
+  if (!held) return undefined
+  if (held.expires < Date.now()) {
+    heldStates.delete(sessionId)
+    return undefined
+  }
+  return held.state
+}
+
+function holdState(sessionId: string | undefined, state: SessionState) {
+  if (!sessionId) return
+  heldStates.delete(sessionId)
+  if (state === 'open') return // a valid change_subject / resume clears it
+  heldStates.set(sessionId, { state, expires: Date.now() + HELD_STATE_TTL_MS })
+  while (heldStates.size > HELD_STATE_MAX) {
+    const oldest = heldStates.keys().next().value
+    if (oldest === undefined) break
+    heldStates.delete(oldest)
+  }
+}
+
+/** Newest turns first until the character budget is spent; the oldest are dropped. */
+function capHistory(turns: ChatTurn[]): ChatTurn[] {
+  const kept: ChatTurn[] = []
+  let total = 0
+  for (let i = turns.length - 1; i >= 0; i--) {
+    total += turns[i].content.length
+    if (total > MAX_HISTORY_CHARS) break
+    kept.unshift(turns[i])
+  }
+  return kept
+}
 
 /**
  * POST /api/speech
@@ -37,7 +80,10 @@ const SUPPORT_MESSAGE =
  *   keepPrivate?: boolean,       // stored as consent_level 'private'
  *   transcript?: string          // his recording transcript, for quote checks
  * }
- * Returns SpeechTurnResult + { provider, storage }.
+ * Returns SpeechTurnResult + { provider, storage } (200), including FULL_STOP,
+ * ENDED and GUARD_FAILED_FALLBACK. Model unreachable: 503
+ * { error: 'coach_unreachable', status: 'MODEL_FAILED_FALLBACK' }.
+ * On FULL_STOP / ENDED turns his message is never stored; only Ivor's reply.
  */
 router.post('/', async (req: Request, res: Response) => {
   const b = req.body || {}
@@ -45,20 +91,26 @@ router.post('/', async (req: Request, res: Response) => {
   if (!SPEECH_MODES.includes(mode)) {
     return res.status(400).json({ error: `mode must be one of ${SPEECH_MODES.join(', ')}` })
   }
-  const state: SessionState = STATES.includes(b.state) ? b.state : 'open'
+  if (b.sessionId !== undefined && !isUuid(b.sessionId)) return res.status(400).json({ error: 'sessionId must be a uuid' })
+  const sessionId: string | undefined = b.sessionId
+  const clientState: SessionState = STATES.includes(b.state) ? b.state : 'open'
+  const held = heldState(sessionId)
+  // The more stopped of the two wins: the client can't reopen a full stop or an ended session.
+  const state: SessionState = held && STATE_RANK[held] > STATE_RANK[clientState] ? held : clientState
   const fullStopChoice: FullStopChoice | undefined = CHOICES.includes(b.fullStopChoice) ? b.fullStopChoice : undefined
   const message = typeof b.message === 'string' ? b.message.trim() : ''
   if (message.length > MAX_MESSAGE_CHARS) return res.status(400).json({ error: 'message too long' })
   if (!message && !(state === 'full_stop' && fullStopChoice) && state !== 'ended') {
     return res.status(400).json({ error: 'message is required' })
   }
-  if (b.sessionId !== undefined && !isUuid(b.sessionId)) return res.status(400).json({ error: 'sessionId must be a uuid' })
 
   const history: ChatTurn[] = Array.isArray(b.sessionMessages)
-    ? b.sessionMessages
-        .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-        .slice(-MAX_HISTORY_TURNS)
-        .map((m: any) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) }))
+    ? capHistory(
+        b.sessionMessages
+          .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+          .slice(-MAX_HISTORY_TURNS)
+          .map((m: any) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) })),
+      )
     : []
 
   const provider = speechProvider()
@@ -78,21 +130,33 @@ router.post('/', async (req: Request, res: Response) => {
       { callModel: callSpeechModel, supportMessage: SUPPORT_MESSAGE },
     )
 
+    holdState(sessionId, result.state)
+
+    // Model unreachable: say so, never a canned question that looks like Ivor working. Nothing stored.
+    if (result.status === 'MODEL_FAILED_FALLBACK') {
+      return res.status(503).json({ error: 'coach_unreachable', status: 'MODEL_FAILED_FALLBACK' })
+    }
+
+    // A disclosure (full stop, ended, risk) is never kept: no user row, and no matched words in the guards.
+    const stopped = result.status === 'FULL_STOP' || result.status === 'ENDED' || result.guards.distress.triggered
     let storage: { status: string; error?: string } = { status: 'NOT_STORED_NO_SESSION' }
-    if (b.sessionId) {
+    if (sessionId) {
       const last = result.model[result.model.length - 1]
       const consent_level = b.keepPrivate ? 'private' : 'crew'
+      const guards = stopped
+        ? { ...result.guards, distress: { ...result.guards.distress, matched: [] } }
+        : result.guards
       storage = await saveSpeechTurns(
         [
-          ...(message ? [{ session_id: b.sessionId, role: 'user' as const, mode, content: message, consent_level: consent_level as 'crew' | 'private' }] : []),
+          ...(message && !stopped ? [{ session_id: sessionId, role: 'user' as const, mode, content: message, consent_level: consent_level as 'crew' | 'private' }] : []),
           {
-            session_id: b.sessionId,
+            session_id: sessionId,
             role: 'assistant' as const,
             mode,
             content: result.reply,
             consent_level: consent_level as 'crew' | 'private',
             turn_status: result.status,
-            guards: result.guards,
+            guards,
             provider: last?.provider ?? null,
             model: last?.model ?? null,
           },

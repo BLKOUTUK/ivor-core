@@ -69,6 +69,9 @@ export const WRITING_PHRASES: string[] = [
   'something along the lines of',
   'a line like',
   'draft:',
+  'open with',
+  'start with',
+  'one option',
 ]
 
 export interface NoWritingResult {
@@ -96,12 +99,17 @@ export function checkNoWriting(reply: string, mode: SpeechMode): NoWritingResult
 
 /**
  * Pull quoted spans from a reply: straight double quotes, curly double quotes,
- * and curly single quotes that open at a word boundary (so apostrophes in
- * "didn't" are not read as quotes).
+ * and curly or straight single quotes that open at a word boundary (so
+ * apostrophes in "didn't" are not read as quotes).
  */
 export function extractQuotes(reply: string): string[] {
   const out: string[] = []
-  const patterns = [/"([^"\n]+)"/g, /“([^”\n]+)”/g, /(?:^|[\s(\[])‘([^’\n]+(?:’\w[^’\n]*)*)’(?=$|[\s.,;:!?)\]])/g]
+  const patterns = [
+    /"([^"\n]+)"/g,
+    /“([^”\n]+)”/g,
+    /(?:^|[\s(\[])‘([^’\n]+(?:’\w[^’\n]*)*)’(?=$|[\s.,;:!?)\]])/g,
+    /(?:^|[\s(\[])'([^'\n]+(?:'\w[^'\n]*)*)'(?=$|[\s.,;:!?)\]])/g,
+  ]
   for (const re of patterns) {
     let m: RegExpExecArray | null
     while ((m = re.exec(reply)) !== null) {
@@ -137,14 +145,20 @@ export function verifyQuotes(reply: string, speakerTranscript: string): QuoteRes
 
 export type DistressLevel = 'none' | 'pause' | 'risk'
 
+// First person only: third-person or idiomatic uses fall through to PAUSE_PATTERNS.
 const RISK_PATTERNS: RegExp[] = [
-  /\bkill(ing)? myself\b/,
+  /\bkill(ing)? myself\b(?! laugh)/,
+  /\bkms\b/,
   /\bend (it all|my life)\b/,
-  /\bsuicid(e|al)\b/,
+  /\btake my (own )?life\b/,
+  /\bi'?m (feeling )?suicidal\b/,
+  /\b(feel|feeling|felt) suicidal\b/,
+  /\b(thinking|thought|think) (about|of) suicide\b/,
+  /\bbetter off without me\b/,
   /\bself[- ]?harm/,
   /\bhurt(ing)? myself\b/,
   /\bdon'?t want to (be here|live|wake up)\b/,
-  /\bwant(ed)? to die\b/,
+  /\b(want(ed)? to|wanna) die\b/,
   /\bno (point|reason) (in )?(living|going on)\b/,
   /\bhurt (someone|somebody|him|them)\b/,
 ]
@@ -157,11 +171,16 @@ const PAUSE_PATTERNS: RegExp[] = [
   /\bcried\b/,
   /\btears?\b/,
   /\bin bits\b/,
-  /\b(died|dying|passed away|passed on|funeral|buried)\b/,
+  /\b(died|dying(?! to\b)|passed away|passed on|funeral|buried)\b/,
+  /\bsuicid(e|al)\b/,
+  /\bkill(ing)? myself\b/,
+  /\b(so|really|very|too|properly|fucking) (angry|mad|pissed( off)?)\b/,
+  /\bi'?m angry\b/,
+  /\b(furious|fuming|livid|seething|enraged)\b/,
   /\bgriev(e|ing|f)\b/,
   /\bcan'?t do this\b/,
   /\bhard to (talk|say|think) about\b/,
-  /\btoo much\b/,
+  /\b(it'?s|this is|that'?s|it was|this was|that was|getting|all) (a bit |just |all )?too much\b/,
   /\bbreaking down\b/,
   /\bfalling apart\b/,
   /\bashamed\b/,
@@ -181,7 +200,8 @@ export interface DistressResult {
 }
 
 export function detectDistress(message: string): DistressResult {
-  const text = message.toLowerCase().replace(/[‘’]/g, "'")
+  // Every apostrophe variant (U+2018, U+2019, U+02BC, backtick, acute, prime) becomes a straight one.
+  const text = message.toLowerCase().replace(/[‘’ʼ`´′]/g, "'")
   const hits = (list: RegExp[]) =>
     list.map((re) => text.match(re)?.[0]).filter((m): m is string => !!m)
   const risk = hits(RISK_PATTERNS)
@@ -257,6 +277,9 @@ const FULL_STOP_FORBIDDEN: RegExp[] = [
   /\bwhat did you (decide|do|feel|learn)\b/,
   /\bhow did (that|it|you) (make you )?feel\b/,
   /\btell me more\b/,
+  // The full-stop screen has no text box: never ask him to type.
+  /\bsay so\b/,
+  /\bjust say\b/,
 ]
 
 export const MAX_WORDS_FULL_STOP = 60

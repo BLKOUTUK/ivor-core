@@ -42,6 +42,9 @@ function normaliseHistory(history: ChatTurn[]): ChatTurn[] {
   return clean
 }
 
+/** Bound every call: a hung provider must not hang his turn. */
+const CLIENT_OPTIONS = { timeout: 30_000, maxRetries: 1 }
+
 let anthropicClient: Anthropic | null = null
 let groqClient: OpenAI | null = null
 
@@ -49,7 +52,7 @@ async function callAnthropic(req: ModelRequest): Promise<ModelResult> {
   const model = process.env.SPEECH_MODEL || 'claude-sonnet-5-5'
   const effortEnv = (process.env.SPEECH_EFFORT || 'medium') as Effort
   const effort: Effort = EFFORTS.includes(effortEnv) ? effortEnv : 'medium'
-  if (!anthropicClient) anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  if (!anthropicClient) anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, ...CLIENT_OPTIONS })
 
   try {
     const stream = anthropicClient.beta.messages.stream({
@@ -98,7 +101,7 @@ async function callAnthropic(req: ModelRequest): Promise<ModelResult> {
 
 async function callGroq(req: ModelRequest): Promise<ModelResult> {
   const model = process.env.GROQ_MODEL || 'openai/gpt-oss-120b'
-  if (!groqClient) groqClient = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1' })
+  if (!groqClient) groqClient = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1', ...CLIENT_OPTIONS })
   try {
     const completion = await groqClient.chat.completions.create({
       model,

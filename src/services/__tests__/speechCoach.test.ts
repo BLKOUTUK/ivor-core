@@ -3,7 +3,16 @@
  * The model is faked; these prove the guards are enforced in code even when
  * the model misbehaves.
  */
-import { runSpeechTurn, FULL_STOP_OPTIONS, type ModelCaller, type ModelRequest } from '../speechCoach.js'
+import {
+  runSpeechTurn,
+  FULL_STOP_OPTIONS,
+  ENDED_REPLY,
+  FULL_STOP_FALLBACK_REPLY,
+  STAY_REPLY,
+  MODEL_FALLBACK_SHAPE,
+  type ModelCaller,
+  type ModelRequest,
+} from '../speechCoach.js'
 import { DOORWAY_QUESTIONS } from '../../data/speechPrompts.js'
 
 function fakeModel(replies: Array<string | { refused: true }>): ModelCaller & { calls: ModelRequest[] } {
@@ -92,7 +101,67 @@ describe('runSpeechTurn: distress forces full stop', () => {
     )
     expect(r.status).toBe('ENDED')
     expect(r.reply).not.toMatch(/\?/)
+    expect(r.supportMessage).toBe(SUPPORT)
     expect(model.calls).toHaveLength(0)
+  })
+
+  it('runs the risk check before the ended check: risk in an ended session still gets the support message', async () => {
+    const model = fakeModel(["Thank you for telling me. We're stopping here."])
+    const r = await runSpeechTurn(
+      { mode: 'interview', message: 'I want to kill myself', history, state: 'ended' },
+      { callModel: model, supportMessage: SUPPORT },
+    )
+    expect(r.status).toBe('ENDED')
+    expect(r.reply).not.toBe(ENDED_REPLY)
+    expect(r.supportMessage).toBe(SUPPORT)
+    expect(r.guards.distress.level).toBe('risk')
+  })
+
+  it('attaches the support message to a plain ENDED reply', async () => {
+    const model = fakeModel(['should not be called'])
+    const r = await runSpeechTurn({ mode: 'interview', message: '', history, state: 'ended' }, { callModel: model, supportMessage: SUPPORT })
+    expect(r.status).toBe('ENDED')
+    expect(r.supportMessage).toBe(SUPPORT)
+    expect(model.calls).toHaveLength(0)
+  })
+
+  it('attaches the support message to a pause-level FULL_STOP', async () => {
+    const model = fakeModel(["That's fine. We'll stop right here. We can stay here, change the subject, or stop for today."])
+    const r = await runSpeechTurn(
+      { mode: 'interview', message: 'my dad died three weeks before that, sorry, give me a second', history },
+      { callModel: model, supportMessage: SUPPORT },
+    )
+    expect(r.status).toBe('FULL_STOP')
+    expect(r.supportMessage).toBe(SUPPORT)
+  })
+
+  it.each(['change_subject', 'resume'] as const)('runs the distress check after a %s choice in full stop', async (choice) => {
+    const model = fakeModel(["That's fine. We'll stop right here. We can stay here, change the subject, or stop for today."])
+    const r = await runSpeechTurn(
+      { mode: 'interview', message: "I'm crying again, sorry", history, state: 'full_stop', fullStopChoice: choice },
+      { callModel: model, supportMessage: SUPPORT },
+    )
+    expect(r.status).toBe('FULL_STOP')
+    expect(r.state).toBe('full_stop')
+    expect(model.calls[0].instruction).toMatch(/FULL STOP/)
+  })
+
+  it.each([
+    "That's a lot to carry. [FULL STOP] We can stay here, change the subject, or stop for today.",
+    "[full_stop] That's fine. We can stay here, change the subject, or stop for today. [FULL STOP]",
+  ])('honours a [FULL STOP] marker anywhere in the reply and strips every occurrence: %s', async (text) => {
+    const model = fakeModel([text])
+    const r = await runSpeechTurn({ mode: 'interview', message: 'yeah that one is a lot', history }, { callModel: model, supportMessage: SUPPORT })
+    expect(r.status).toBe('FULL_STOP')
+    expect(r.reply).not.toMatch(/\[FULL[ _]STOP\]/i)
+  })
+
+  it('canned full-stop and stay replies never ask him to type, and point at the buttons', () => {
+    for (const s of [FULL_STOP_FALLBACK_REPLY, STAY_REPLY]) {
+      expect(s).not.toMatch(/say so|just say|being met|meet you/i)
+      expect(s).toMatch(/buttons/)
+    }
+    expect(FULL_STOP_FALLBACK_REPLY).toMatch(/hasn't been kept/)
   })
 })
 
@@ -156,20 +225,32 @@ describe('runSpeechTurn: reflect quote verification', () => {
 })
 
 describe('runSpeechTurn: shape invention check', () => {
-  it('regenerates once, then returns FLAGGED with the invented terms', async () => {
+  it('regenerates once, then withholds the invented draft (GUARD_FAILED_FALLBACK, flagged terms reported)', async () => {
     const model = fakeModel([
       'Two ways in, yours to change: "Jerome was waiting at the door." Or start in the kitchen.',
       'Two ways in, yours to change: "Jerome held the door in 2019."',
     ])
     const r = await runSpeechTurn({ mode: 'shape', message: 'help me write the opening', history }, { callModel: model, supportMessage: SUPPORT })
     expect(model.calls).toHaveLength(2)
-    expect(r.status).toBe('FLAGGED')
+    expect(r.status).toBe('GUARD_FAILED_FALLBACK')
+    expect(r.fallbackUsed).toBe(true)
+    expect(r.reply).toBe(MODEL_FALLBACK_SHAPE)
+    expect(r.reply).not.toMatch(/Jerome/)
     expect(r.guards.invention?.status).toBe('FAILED')
     expect(r.flagged).toEqual(expect.arrayContaining(['Jerome', '2019']))
   })
 
+  it('also verifies quotes in shape mode and withholds an unverified quoted span', async () => {
+    const model = fakeModel(['Two ways in, yours to change: "the light was on in the hallway at dawn." Or start in the kitchen.'])
+    const r = await runSpeechTurn({ mode: 'shape', message: 'help me write the opening', history }, { callModel: model, supportMessage: SUPPORT })
+    expect(model.calls).toHaveLength(2)
+    expect(r.status).toBe('GUARD_FAILED_FALLBACK')
+    expect(r.guards.quotes?.status).toBe('FAILED')
+    expect(r.reply).toBe(MODEL_FALLBACK_SHAPE)
+  })
+
   it('passes a suggestion built from his words', async () => {
-    const model = fakeModel(['Two ways in, yours to change: "The light was still on." Or: "I was standing in the kitchen when the call came."'])
+    const model = fakeModel(['Two ways in, yours to change: "The light was still on." Or: "I was standing in the kitchen."'])
     const r = await runSpeechTurn({ mode: 'shape', message: 'help me write the opening', history }, { callModel: model, supportMessage: SUPPORT })
     expect(r.status).toBe('OK')
     expect(r.guards.invention?.status).toBe('PASSED')
