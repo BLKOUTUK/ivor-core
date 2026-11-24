@@ -64,8 +64,9 @@ let client: SupabaseClient | null = null
 
 function getClient(): SupabaseClient | null {
   if (client) return client
-  const url = process.env.SPEECH_SUPABASE_URL
-  const key = process.env.SPEECH_SUPABASE_SERVICE_ROLE_KEY
+  // Same Supabase project as the rest of ivor-core, so its existing settings serve when no speech-specific ones are set.
+  const url = process.env.SPEECH_SUPABASE_URL || process.env.SUPABASE_URL
+  const key = process.env.SPEECH_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return null
   client = createClient(url, key, { auth: { persistSession: false } })
   return client
