@@ -186,6 +186,42 @@ describe('checkInvention (shape mode)', () => {
   })
 })
 
+describe('checkInvention on a full draft', () => {
+  const said = 'Pride in Brixton. I was at the back, clapping louder than anyone. My mate Dev laughed and we walked home. I stopped apologising for being loud.'
+
+  it('passes a draft whose sentences open on ordinary capitalised words he never said', () => {
+    const draft = 'DRAFT FROM YOUR WORDS\n\nGoing back over it, Pride in Brixton is where it starts. Standing at the back, clapping louder than anyone.\n1. Walking home with Dev.\n2. Nobody apologising for being loud.\n\nWhat would you change?'
+    const r = checkInvention(draft, said)
+    expect(r.flagged).toEqual([])
+    expect(r.status).toBe('PASSED')
+    // ...but hands them on to be checked for names, without the words he did say
+    expect(r.unsure).toEqual(expect.arrayContaining(['Going', 'Standing', 'Walking']))
+    expect(r.unsure).not.toEqual(expect.arrayContaining(['Pride', 'Dev', 'Nobody']))
+  })
+
+  it('puts a name he never said that opens a sentence in unsure, never silently passes it', () => {
+    const r = checkInvention('Jerome was waiting at the door. Going home was the best part.', said)
+    expect(r.unsure).toEqual(['Jerome', 'Going'])
+  })
+
+  it('still FAILS a draft with a name he never said, mid-sentence', () => {
+    const r = checkInvention('Going back over it, Pride in Brixton is where it starts. Walking home with Dev and Marcus.', said)
+    expect(r.status).toBe('FAILED')
+    expect(r.flagged).toEqual(['Marcus'])
+  })
+
+  it('still FAILS a draft with a place or a figure he never said', () => {
+    const r = checkInvention('Standing at the back in Peckham. It was 2019, and forty of us were clapping.', said)
+    expect(r.status).toBe('FAILED')
+    expect(r.flagged).toEqual(expect.arrayContaining(['Peckham', '2019', 'forty']))
+  })
+
+  it('does not treat list numbering as a figure, but does flag a figure that opens a line', () => {
+    expect(checkInvention('1. Clapping louder than anyone.\n2) Walking home.', said).status).toBe('PASSED')
+    expect(checkInvention('300 of us were clapping.', said).flagged).toEqual(['300'])
+  })
+})
+
 describe('checkFullStopReply', () => {
   it('passes a plain acknowledgement with the three options and no question', () => {
     const r = checkFullStopReply("That's fine. We'll stop right here. What you just said hasn't been kept. We can stay here, change the subject, or stop for today.")

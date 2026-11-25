@@ -222,6 +222,7 @@ const COMMON_CAPITALISED = new Set(
     'maybe perhaps or option one two three first second third yes no not now just only also ' +
     'start begin open close end try keep take leave let tell say said ask think feel ' +
     'ivor blkout draft suggestion suggestions way ways line lines version versions ' +
+    'words unreviewed reviewed speech king kings part ' +
     'in on at to of for from with by as after before because while since until ' +
     'again still even all any each every some both either neither more most less ' +
     'okay ok right sure thanks thank good well fine great'
@@ -240,32 +241,57 @@ const FRAMING_NUMBER_WORDS = new Set(['one', 'two', 'three', 'first', 'second', 
 export interface InventionResult {
   status: GuardStatus
   flagged: string[]
+  /**
+   * Capitalised words he never said that only OPEN a sentence or line. Capitalisation there proves nothing
+   * ("Going home..." vs "Jerome was..."), so the caller must have them checked for names, or treat them as flagged.
+   */
+  unsure: string[]
 }
 
 /**
  * Flags names, places and numbers in a shape-mode suggestion that do not appear
  * in the speaker's transcript. Heuristic: capitalised words (outside a small
  * common-word list) and digits / number words beyond simple framing counts.
+ *
+ * A capitalised word he never said that only OPENS a sentence or line goes in
+ * `unsure`, not `flagged`: every sentence of a full draft starts with one, and
+ * this check cannot tell "Going" from "Jerome". runSpeechTurn has `unsure`
+ * checked for names and fails closed if that check is unavailable.
  */
 export function checkInvention(suggestion: string, speakerTranscript: string): InventionResult {
   const transcriptWords = new Set(normaliseText(speakerTranscript).split(' ').filter(Boolean))
   const flagged: string[] = []
+  const unsure: string[] = []
   const seen = new Set<string>()
-  const tokens = suggestion.replace(/[‘’]/g, "'").match(/[A-Za-z][A-Za-z'-]*|\d[\d,.:]*/g) || []
+  const text = suggestion.replace(/[‘’]/g, "'")
 
-  for (const raw of tokens) {
-    const tok = raw.replace(/'s$/i, '').replace(/[.,:]+$/, '')
+  for (const m of text.matchAll(/[A-Za-z][A-Za-z'-]*|\d[\d,.:]*/g)) {
+    const tok = m[0].replace(/'s$/i, '').replace(/[.,:]+$/, '')
     const lower = tok.toLowerCase()
     if (!tok || seen.has(lower)) continue
     let candidate = false
-    if (/^\d/.test(tok)) candidate = true
+    if (/^\d/.test(tok)) candidate = !isListMarker(text, m.index!, m[0])
     else if (NUMBER_WORDS.has(lower) && !FRAMING_NUMBER_WORDS.has(lower)) candidate = true
     else if (/^[A-Z]/.test(tok) && !COMMON_CAPITALISED.has(lower)) candidate = true
     if (!candidate) continue
+    if (transcriptWords.has(normaliseText(tok))) { seen.add(lower); continue }
+    // An opener stays unseen, so the same word mid-sentence later is still flagged outright.
+    if (/^[A-Z]/.test(tok) && startsSentence(text, m.index!)) { if (!unsure.includes(tok)) unsure.push(tok); continue }
     seen.add(lower)
-    if (!transcriptWords.has(normaliseText(tok))) flagged.push(tok)
+    flagged.push(tok)
   }
-  return { status: flagged.length ? 'FAILED' : 'PASSED', flagged }
+  return { status: flagged.length ? 'FAILED' : 'PASSED', flagged, unsure: unsure.filter((w) => !flagged.includes(w)) }
+}
+
+/** True when the word at `index` opens the text, a line, a list item, a quotation or a sentence. */
+function startsSentence(text: string, index: number): boolean {
+  const before = text.slice(0, index).replace(/[ \t"“'(\[*_-]+$/, '')
+  return before === '' || /[.!?:;\n]$/.test(before) || /(^|\n)\s*\d+[.)]$/.test(before)
+}
+
+/** "1." or "2)" opening a line is list numbering, not a figure he might not have said. */
+function isListMarker(text: string, index: number, raw: string): boolean {
+  return /^\d{1,2}[.)]?$/.test(raw) && /(^|\n)[ \t]*$/.test(text.slice(0, index)) && /^[.)]?\s/.test(text.slice(index + raw.replace(/[.)]$/, '').length))
 }
 
 // ── 5. full-stop reply check ───────────────────────────────────────

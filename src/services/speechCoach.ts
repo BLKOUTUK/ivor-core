@@ -126,6 +126,11 @@ export interface SpeechTurnResult {
 
 export interface SpeechDeps {
   callModel: ModelCaller
+  /**
+   * Which of these sentence-opening words are names (people, places, organisations)? Returns the names, or null
+   * if it could not check. Absent or null: every unsure word counts as invented (the draft is withheld).
+   */
+  findNames?: (words: string[], text: string) => Promise<string[] | null>
   supportMessage: string
 }
 
@@ -303,7 +308,11 @@ export async function runSpeechTurn(input: SpeechTurnInput, deps: SpeechDeps): P
     const reasons: string[] = []
 
     if (input.mode === 'shape') {
-      const invention = checkInvention(text, transcript)
+      let invention = checkInvention(text, transcript)
+      if (invention.unsure.length) {
+        const names = (deps.findNames ? await deps.findNames(invention.unsure, text) : null) ?? invention.unsure
+        if (names.length) invention = { ...invention, status: 'FAILED', flagged: [...invention.flagged, ...names] }
+      }
       const quotes = verifyQuotes(text, transcript)
       lastGuards = { distress, invention, quotes }
       if (invention.status === 'PASSED' && quotes.status !== 'FAILED') {

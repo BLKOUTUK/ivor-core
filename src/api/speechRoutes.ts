@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express'
 import { SPEECH_MODES, type SpeechMode } from '../services/speechGuards.js'
 import { runSpeechTurn, FULL_STOP_OPTIONS, FULL_STOP_FALLBACK_REPLY, type ChatTurn, type FullStopChoice, type SessionState } from '../services/speechCoach.js'
-import { callSpeechModel, speechProvider } from '../services/speechModel.js'
+import { callSpeechModel, speechProvider, findNamesAmong } from '../services/speechModel.js'
 import { saveSpeechTurns, isUuid } from '../services/speechTurnStore.js'
 
 /**
@@ -127,7 +127,7 @@ router.post('/', async (req: Request, res: Response) => {
         fullStopChoice,
         transcriptExtra: typeof b.transcript === 'string' ? b.transcript.slice(0, 20000) : undefined,
       },
-      { callModel: callSpeechModel, supportMessage: SUPPORT_MESSAGE },
+      { callModel: callSpeechModel, findNames: findNamesAmong, supportMessage: SUPPORT_MESSAGE },
     )
 
     holdState(sessionId, result.state)

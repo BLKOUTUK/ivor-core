@@ -139,3 +139,33 @@ export const callSpeechModel: ModelCaller = async (req) => {
   if (provider === 'groq') return callGroq(req)
   return { ok: false, refused: false, text: '', provider: 'none', model: '', stopReason: null, usage: null, error: 'no model configured' }
 }
+
+/**
+ * Second look for the invention guard: of these words, each of which only opens a sentence in Ivor's draft and
+ * which he never said, which are names of people, places, organisations, brands or events? A small model, one
+ * short call. Returns null on any failure so the caller fails closed (the draft is withheld).
+ */
+export async function findNamesAmong(words: string[], text: string): Promise<string[] | null> {
+  if (!process.env.ANTHROPIC_API_KEY) return null
+  if (!anthropicClient) anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, ...CLIENT_OPTIONS })
+  try {
+    const msg = await anthropicClient.messages.create({
+      model: process.env.SPEECH_NAME_CHECK_MODEL || 'claude-haiku-5-5',
+      max_tokens: 300,
+      system:
+        'You label words. You are given a short text and a list of words that each begin a sentence in it. ' +
+        'Reply with ONLY a JSON array of the listed words that are proper nouns in this text: names of people, places, ' +
+        'organisations, brands, venues or named events. Ordinary English words that are capitalised only because they ' +
+        'start a sentence are not proper nouns. If none are, reply []. No other text.',
+      messages: [{ role: 'user', content: JSON.stringify({ words, text: text.slice(0, 6000) }) }],
+    })
+    const out = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('')
+    const arr = JSON.parse(out.slice(out.indexOf('['), out.lastIndexOf(']') + 1))
+    if (!Array.isArray(arr)) return null
+    return words.filter((w) => arr.some((a) => typeof a === 'string' && a.toLowerCase() === w.toLowerCase()))
+  } catch (err) {
+    const e = err instanceof Anthropic.APIError ? `anthropic ${err.status ?? ''} ${err.name}`.trim() : 'unreadable reply'
+    console.error('[speech] name check FAILED:', e)
+    return null
+  }
+}

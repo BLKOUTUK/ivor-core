@@ -240,6 +240,34 @@ describe('runSpeechTurn: shape invention check', () => {
     expect(r.flagged).toEqual(expect.arrayContaining(['Jerome', '2019']))
   })
 
+  it('returns a draft whose sentence openers the name check clears', async () => {
+    const model = fakeModel(['Going home was the best part. Standing there, nothing else mattered.'])
+    const seen: string[][] = []
+    const r = await runSpeechTurn({ mode: 'shape', message: 'write me a full draft', history },
+      { callModel: model, supportMessage: SUPPORT, findNames: async (w) => { seen.push(w); return [] } })
+    expect(seen).toHaveLength(1)
+    expect(seen[0]).toContain('Going')
+    expect(r.status).toBe('OK')
+    expect(r.reply).toMatch(/Going home/)
+  })
+
+  it('withholds a draft when the name check says an opener is a name', async () => {
+    const model = fakeModel(['Jerome was waiting. Going home was the best part.', 'Jerome was waiting. Going home was the best part.'])
+    const r = await runSpeechTurn({ mode: 'shape', message: 'write me a full draft', history },
+      { callModel: model, supportMessage: SUPPORT, findNames: async () => ['Jerome'] })
+    expect(r.status).toBe('GUARD_FAILED_FALLBACK')
+    expect(r.flagged).toEqual(['Jerome'])
+    expect(r.reply).not.toMatch(/Jerome/)
+  })
+
+  it('withholds the draft when the name check cannot run (fails closed)', async () => {
+    const model = fakeModel(['Going home was the best part.', 'Going home was the best part.'])
+    const r = await runSpeechTurn({ mode: 'shape', message: 'write me a full draft', history },
+      { callModel: model, supportMessage: SUPPORT, findNames: async () => null })
+    expect(r.status).toBe('GUARD_FAILED_FALLBACK')
+    expect(r.reply).not.toMatch(/Going home/)
+  })
+
   it('also verifies quotes in shape mode and withholds an unverified quoted span', async () => {
     const model = fakeModel(['Two ways in, yours to change: "the light was on in the hallway at dawn." Or start in the kitchen.'])
     const r = await runSpeechTurn({ mode: 'shape', message: 'help me write the opening', history }, { callModel: model, supportMessage: SUPPORT })
