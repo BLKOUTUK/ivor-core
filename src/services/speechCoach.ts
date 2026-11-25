@@ -308,12 +308,16 @@ export async function runSpeechTurn(input: SpeechTurnInput, deps: SpeechDeps): P
     const reasons: string[] = []
 
     if (input.mode === 'shape') {
-      let invention = checkInvention(text, transcript)
+      // A full draft arrives between two lines of "---" (the app asks for that). Only the piece between them is
+      // offered as his words, so only that is checked; Ivor's remarks after it ("this runs about 40 seconds") are his own.
+      const piece = text.match(/(?:^|\n)\s*-{3,}\s*\n([\s\S]*?)\n\s*-{3,}\s*(?:\n|$)/)?.[1]
+      const checked = piece && piece.trim() ? piece : text
+      let invention = checkInvention(checked, transcript)
       if (invention.unsure.length) {
-        const names = (deps.findNames ? await deps.findNames(invention.unsure, text) : null) ?? invention.unsure
+        const names = (deps.findNames ? await deps.findNames(invention.unsure, checked) : null) ?? invention.unsure
         if (names.length) invention = { ...invention, status: 'FAILED', flagged: [...invention.flagged, ...names] }
       }
-      const quotes = verifyQuotes(text, transcript)
+      const quotes = verifyQuotes(checked, transcript)
       lastGuards = { distress, invention, quotes }
       if (invention.status === 'PASSED' && quotes.status !== 'FAILED') {
         return { status: 'OK', state: 'open', reply: text, attempts: attempt, fallbackUsed: false, guards: lastGuards, model: results.map(modelLog) }

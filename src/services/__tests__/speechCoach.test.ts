@@ -268,6 +268,22 @@ describe('runSpeechTurn: shape invention check', () => {
     expect(r.reply).not.toMatch(/Going home/)
   })
 
+  it('checks only the piece between the --- lines, not Ivor\'s remarks after it', async () => {
+    const model = fakeModel(['---\nthe light was still on.\n---\n\nThat runs about 35 seconds. Nothing yet about 2027.'])
+    const r = await runSpeechTurn({ mode: 'shape', message: 'write me a full draft', history },
+      { callModel: model, supportMessage: SUPPORT, findNames: async () => [] })
+    expect(r.status).toBe('OK')
+  })
+
+  it('still withholds a marked-out piece that contains a figure he never said', async () => {
+    const reply = '---\nthe light was still on in 2019.\n---\n\nWhat would you change?'
+    const model = fakeModel([reply, reply])
+    const r = await runSpeechTurn({ mode: 'shape', message: 'write me a full draft', history },
+      { callModel: model, supportMessage: SUPPORT, findNames: async () => [] })
+    expect(r.status).toBe('GUARD_FAILED_FALLBACK')
+    expect(r.flagged).toEqual(['2019'])
+  })
+
   it('also verifies quotes in shape mode and withholds an unverified quoted span', async () => {
     const model = fakeModel(['Two ways in, yours to change: "the light was on in the hallway at dawn." Or start in the kitchen.'])
     const r = await runSpeechTurn({ mode: 'shape', message: 'help me write the opening', history }, { callModel: model, supportMessage: SUPPORT })
