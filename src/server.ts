@@ -34,6 +34,7 @@ import checkoutRoutes from './api/checkoutRoutes.js'
 import campaignRoutes from './api/campaignRoutes.js'
 import interviewRoutes from './api/interviewRoutes.js'
 import speechRoutes from './api/speechRoutes.js'
+import guestInterviewRoutes from './api/guestInterviewRoutes.js'
 import panelImageRoutes from './api/panelImageRoutes.js'
 import campaignTrackingService from './services/CampaignTrackingService.js'
 import { requireSessionMiddleware } from './middleware/requireSession.js'
@@ -175,6 +176,7 @@ app.use('/api/campaign', campaignRoutes)   // Campaign tracking & health API
 app.use('/api/interview', interviewRoutes)  // Ivor's Compass interview challenge API
 app.use('/api/interview', panelImageRoutes)  // Ivor's Compass panel image generation
 app.use('/api/speech', speechRoutes)        // Kings' Speech writing coach (WP4)
+app.use('/api/guest-interview', guestInterviewRoutes) // BLKOUT Voices guest interviews by private link
 
 // Health check
 // ivor.blkoutuk.com and ivor.blkoutuk.cloud are API hosts with no page at /. Send a person
