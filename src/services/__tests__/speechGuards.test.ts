@@ -216,6 +216,11 @@ describe('checkInvention on a full draft', () => {
     expect(r.flagged).toEqual(expect.arrayContaining(['Peckham', '2019', 'forty']))
   })
 
+  it('allows 2027, the year the piece looks toward, but no other year', () => {
+    expect(checkInvention('In 2027, I decree that nobody apologises for being loud.', said).status).toBe('PASSED')
+    expect(checkInvention('In 2028, I decree that nobody apologises for being loud.', said).flagged).toEqual(['2028'])
+  })
+
   it('does not treat list numbering as a figure, but does flag a figure that opens a line', () => {
     expect(checkInvention('1. Clapping louder than anyone.\n2) Walking home.', said).status).toBe('PASSED')
     expect(checkInvention('300 of us were clapping.', said).flagged).toEqual(['300'])

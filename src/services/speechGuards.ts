@@ -272,7 +272,8 @@ export function checkInvention(suggestion: string, speakerTranscript: string): I
     const lower = tok.toLowerCase()
     if (!tok || seen.has(lower)) continue
     let candidate = false
-    if (/^\d/.test(tok)) candidate = !isListMarker(text, m.index!, m[0])
+    // 2027 is the year the whole piece looks toward ("In 2027, I decree..."): the frame's own figure, not an invented one.
+    if (/^\d/.test(tok)) candidate = tok !== '2027' && !isListMarker(text, m.index!, m[0])
     else if (NUMBER_WORDS.has(lower) && !FRAMING_NUMBER_WORDS.has(lower)) candidate = true
     else if (/^[A-Z]/.test(tok) && !COMMON_CAPITALISED.has(lower)) candidate = true
     if (!candidate) continue
