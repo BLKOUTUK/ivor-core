@@ -223,6 +223,8 @@ const COMMON_CAPITALISED = new Set(
     'start begin open close end try keep take leave let tell say said ask think feel ' +
     'ivor blkout draft suggestion suggestions way ways line lines version versions ' +
     'words unreviewed reviewed speech king kings part ' +
+    "i've i'm i'll i'd it's that's there's here's what's let's don't didn't doesn't can't won't isn't wasn't " +
+    'do does did can could would should will shall may might must have has had is are was were be been am ' +
     'in on at to of for from with by as after before because while since until ' +
     'again still even all any each every some both either neither more most less ' +
     'okay ok right sure thanks thank good well fine great'

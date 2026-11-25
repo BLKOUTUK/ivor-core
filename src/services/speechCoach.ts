@@ -320,6 +320,8 @@ export async function runSpeechTurn(input: SpeechTurnInput, deps: SpeechDeps): P
       }
       if (invention.status === 'FAILED') reasons.push(`names or facts not in his words: ${invention.flagged.join(', ')}`)
       if (quotes.status === 'FAILED') reasons.push(`quotes not in his words: ${quotes.unverified.join(' | ')}`)
+      // Ivor's own invented words only (never his): shows why a draft took a second attempt or was withheld.
+      console.warn(`[speech] shape attempt ${attempt} withheld: invention=${invention.flagged.join(', ') || 'ok'} quotes=${quotes.status}`)
     } else {
       const noWriting = checkNoWriting(text, input.mode)
       const quotes = verifyQuotes(text, transcript)
