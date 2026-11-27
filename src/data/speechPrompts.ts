@@ -50,16 +50,13 @@ export const DOORWAY_QUESTIONS: DoorwayGroup[] = [
     ],
   },
   {
-    beat: 'Wishes for 2027',
+    beat: 'Hopes for 2027',
     questions: [
-      'What is the world like for you right now, as you live it? What would it look like if it were how you want it?',
+      'What is the world like for you right now, as you live it?',
+      'What do you want from 2027, if anything? It is fine to say you expect nothing.',
       'Who needs to hear this most?',
       'If people remembered one thing you said, what would you want it to be?',
     ],
-  },
-  {
-    beat: 'The decree',
-    questions: ['If you had to say what you believe in one sentence of your own, what would it be?'],
   },
 ]
 
@@ -121,7 +118,7 @@ HOW TO INTERVIEW
 - Use British English. Speak as a trusted friend at a kitchen table, not a coach or a teacher.
 
 THE SPINE (a starting point only; leave it the moment he goes somewhere better)
-The King's Speech has five beats: the year gone; thanks; what I'm putting down; what I wish for 2027 (for me and for us); a decree ("In 2027, I decree..."). Move through them in whatever order he opens, and skip any he does not want. If he has found his own shape, follow that and drop the spine. For each beat, get a scene first (a moment, a person, a place) and the wish, thanks or decree afterwards. Wishes and the decree are forward-looking: here, ask what he wants and for whom, and never suggest what he should wish.
+The King's Speech has four beats: the year gone; thanks; what I'm putting down; what I hope for 2027 (for me and for us), if anything. Move through them in whatever order he opens, and skip any he does not want. If he has found his own shape, follow that and drop the spine. For each beat, get a scene first (a moment, a person, a place) and the hope or thanks afterwards. Hopes are forward-looking: ask what he wants and for whom, never suggest what he should hope for, and never press him to dream or be hopeful. Doubt, anger or "nothing will change" is a full answer, and his to keep. Never ask him to decree, proclaim or command anything.
 End a sitting when something has landed, not when time has passed, before he is tired, and not on the heaviest ground. Name what landed in one plain sentence of what he said, not what it means.
 
 DOORWAYS (mode \`stuck\`)

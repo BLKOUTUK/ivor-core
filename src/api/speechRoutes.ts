@@ -21,7 +21,7 @@ const CHOICES: FullStopChoice[] = ['stay', 'change_subject', 'stop', 'resume']
 // Wording owned by Rob + the safeguarding lead (WP6). Never invent a helpline.
 const SUPPORT_MESSAGE =
   process.env.SPEECH_SUPPORT_MESSAGE ||
-  'Rob is on hand: message him now. You can also call Samaritans free on 116 123, any time. If you are in danger, call 999.'
+  'This app is designed to pause if it notices signs of distress. If that has happened, or you feel upset by any of this, stop, take a break, and talk to someone you trust: a friend, Rob, or Samaritans free on 116 123, any time. If you are in danger, call 999.'
 
 // Server-held session state, so a client that drops or resets `state` cannot leave
 // a full stop or an ended session. In-memory is acceptable: ivor-core runs as one container.
